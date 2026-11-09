@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 // Reads src/ui/style.css as text. No DOM.
@@ -154,5 +154,173 @@ describe("style.css rules", () => {
     expect(contrast("#000000", "#ffffff")).toBeCloseTo(21, 5);
     expect(contrast("#777777", "#ffffff")).toBeGreaterThan(4.4);
     expect(contrast("#777777", "#ffffff")).toBeLessThan(4.6);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// morgue-pass-2, task 4: rules for the tag layout, stamp, steel panel and links.
+// ---------------------------------------------------------------------------
+
+const NEW_TOKENS = [
+  "steel",
+  "steel-line",
+  "steel-light",
+  "steel-shadow",
+  "ghost-stamp",
+  "zombie-stamp",
+  "unproven-stamp",
+];
+
+/** Every `selectors { body }` block of the stylesheet (no nested braces), selector list split on commas. */
+function ruleBlocks(): { selectors: string[]; body: string }[] {
+  const out: { selectors: string[]; body: string }[] = [];
+  for (const m of code.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const selectors = (m[1] ?? "").split(",").map((s) => s.trim());
+    out.push({ selectors, body: m[2] ?? "" });
+  }
+  return out;
+}
+
+function bodiesFor(selector: string): string[] {
+  return ruleBlocks()
+    .filter((r) => r.selectors.includes(selector))
+    .map((r) => r.body);
+}
+
+function declarations(name: string): string[] {
+  return [...code.matchAll(new RegExp(`(?<![\\w-])${name}\\s*:\\s*([^;}]+)`, "g"))].map((m) => (m[1] ?? "").trim());
+}
+
+const STAMP_PAIRS: readonly (readonly [string, string, number])[] = [
+  ["ghost-stamp", "tag-paper", 4.5],
+  ["zombie-stamp", "tag-paper", 4.5],
+  ["unproven-stamp", "tag-paper", 4.5],
+  ["bone", "steel", 4.5],
+  ["bone-dim", "steel", 4.5],
+  ["ghost-ink", "steel", 4.5],
+  ["zombie-ink", "steel", 4.5],
+  ["unproven-ink", "steel", 4.5],
+  ["slab-line", "steel", 3],
+];
+
+const PINNED = {
+  dependencies: {
+    "tree-sitter-wasms": "0.1.13",
+    "web-tree-sitter": "0.25.10",
+  },
+  devDependencies: {
+    "@types/node": "22.10.2",
+    "fast-check": "3.23.2",
+    tsx: "4.20.6",
+    typescript: "5.7.2",
+    vite: "5.4.21",
+    vitest: "2.1.8",
+  },
+};
+
+describe("style.css rules, morgue pass 2", () => {
+  it("defines the seven new tokens", () => {
+    for (const name of NEW_TOKENS) {
+      expect(rootBlock, `--${name}`).toMatch(new RegExp(`--${name}\\s*:`));
+    }
+  });
+
+  it("meets the contrast ratios of the stamp and steel pairs", () => {
+    for (const [fg, bg, min] of STAMP_PAIRS) {
+      const ratio = contrast(token(fg), token(bg));
+      expect(ratio, `--${fg} on --${bg}`).toBeGreaterThanOrEqual(min);
+    }
+  });
+
+  it("still forbids gradient functions", () => {
+    expect(code).not.toMatch(/gradient\s*\(/i);
+  });
+
+  it("styles the tag stamp as a tilted 14px+ double frame without blur or text shadow", () => {
+    const main = bodiesFor(".tag .tag-type");
+    const frame = bodiesFor(".tag .tag-type::before");
+    expect(main.length).toBeGreaterThan(0);
+    expect(frame.length).toBeGreaterThan(0);
+    const mainText = main.join(";");
+    const frameText = frame.join(";");
+
+    const size = /font-size\s*:\s*([\d.]+)(rem|px)/.exec(mainText);
+    expect(size).not.toBeNull();
+    const px = Number(size?.[1]) * (size?.[2] === "rem" ? 16 : 1);
+    expect(px).toBeGreaterThanOrEqual(14);
+
+    expect(frameText).toMatch(/border\s*:\s*3px\s+double\b/);
+
+    const rot = /rotate\(\s*(-?[\d.]+)deg\s*\)/.exec(mainText);
+    expect(rot).not.toBeNull();
+    const deg = Number(rot?.[1]);
+    expect(deg).toBeGreaterThanOrEqual(-3);
+    expect(deg).toBeLessThanOrEqual(-2);
+
+    expect(mainText + frameText).not.toMatch(/blur\(/);
+    expect(mainText + frameText).not.toMatch(/text-shadow/);
+  });
+
+  it("uses filter only as url(#fragment) and every url() is a fragment", () => {
+    const filters = declarations("filter");
+    expect(filters.length).toBeGreaterThan(0);
+    for (const value of filters) expect(value).toMatch(/^url\(#[\w-]+\)$/);
+    const urls = [...code.matchAll(/url\(([^)]*)\)/g)].map((m) => (m[1] ?? "").trim());
+    expect(urls.length).toBeGreaterThan(0);
+    for (const u of urls) expect(u).toMatch(/^["']?#[\w-]+["']?$/);
+  });
+
+  it("uses only var(--swing) or 200ms as an animation or transition duration", () => {
+    const values = [...declarations("animation"), ...declarations("transition")];
+    expect(values.length).toBeGreaterThan(0);
+    for (const value of values) {
+      const clean = value.replace(/\s*!important\s*$/, "");
+      if (clean === "none") continue;
+      expect(clean, value).toMatch(/var\(--swing\)|(?<![\d.])200ms/);
+      const times = [...clean.matchAll(/(?<![\w-])(\d*\.?\d+)(ms|s)\b/g)];
+      for (const t of times) expect(t[0]).toBe("200ms");
+    }
+  });
+
+  it("has no scroll-behavior: smooth", () => {
+    expect(code).not.toMatch(/scroll-behavior\s*:\s*smooth/);
+  });
+
+  it("has rules for disabled chips, linked elements and the cut corner", () => {
+    expect(bodiesFor(".chip:disabled").length).toBeGreaterThan(0);
+    expect(code).toMatch(/\[data-linked="true"\]/);
+    expect(code).toMatch(/clip-path\s*:\s*polygon\(/);
+  });
+
+  it("keeps the marker label at 0.75rem or more", () => {
+    const text = bodiesFor(".marker-label").join(";");
+    const size = /font-size\s*:\s*([\d.]+)rem/.exec(text);
+    expect(size).not.toBeNull();
+    expect(Number(size?.[1])).toBeGreaterThanOrEqual(0.75);
+  });
+
+  it("gives the link controls a 44px target", () => {
+    for (const selector of [".chip", ".link-button", ".phone-marker", ".marker"]) {
+      const bodies = bodiesFor(selector);
+      expect(bodies.length, selector).toBeGreaterThan(0);
+      expect(
+        bodies.some((b) => /(?<![\w-])(min-height|height)\s*:\s*var\(--tap\)/.test(b)),
+        selector,
+      ).toBe(true);
+    }
+  });
+
+  it("keeps src/ui/public/ down to report.json", () => {
+    const dir = new URL("../../src/ui/public/", import.meta.url);
+    expect(readdirSync(dir)).toEqual(["report.json"]);
+  });
+
+  it("keeps the pinned dependency lists of package.json", () => {
+    const pkg = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")) as {
+      dependencies: Record<string, string>;
+      devDependencies: Record<string, string>;
+    };
+    expect(pkg.dependencies).toEqual(PINNED.dependencies);
+    expect(pkg.devDependencies).toEqual(PINNED.devDependencies);
   });
 });
