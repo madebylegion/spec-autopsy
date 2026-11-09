@@ -93,3 +93,25 @@ describe("linker accuracy on the held-out fixture", () => {
     expectSane(report);
   }, 120_000);
 });
+
+describe("linker accuracy on the blind3 fixture", () => {
+  it("reports sane numbers (no floor is asserted)", async () => {
+    const root = join(here, "..", "fixtures", "blind3");
+    const map = await linkFixture(root);
+    const truth = await loadTruth(root);
+    const report = scoreAgainstTruth(map, truth);
+    printReport("blind3", report);
+
+    const id = (e: TruthEntry): string => `${e.class} ${e.key}`;
+    const truthIds = new Set(truth.map(id));
+    const foundIds = new Set(foundEntries(map).map(id));
+    const falsePositives = [...foundIds].filter((k) => !truthIds.has(k)).sort();
+    const misses = [...truthIds].filter((k) => !foundIds.has(k)).sort();
+    console.log(`linker accuracy [blind3] false positives: ${falsePositives.length}`);
+    for (const k of falsePositives) console.log(`linker accuracy [blind3] false positive: ${k}`);
+    console.log(`linker accuracy [blind3] misses: ${misses.length}`);
+    for (const k of misses) console.log(`linker accuracy [blind3] miss: ${k}`);
+
+    expectSane(report);
+  }, 120_000);
+});
