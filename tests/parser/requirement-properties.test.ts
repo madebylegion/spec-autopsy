@@ -20,7 +20,18 @@ interface Fields {
   response: string;
 }
 
-const fieldsArb: fc.Arbitrary<Fields> = fc.record({
+// No clause at all: the shape the printer's no-clause branch handles.
+const ubiquitousArb: fc.Arbitrary<Fields> = fc.record({
+  state: fc.constant(undefined),
+  feature: fc.constant(undefined),
+  trigger: fc.constant(undefined),
+  condition: fc.constant(undefined),
+  system: fieldArb,
+  response: fieldArb,
+});
+
+// Independent optional clauses. Can still be ubiquitous by chance.
+const clauseArb: fc.Arbitrary<Fields> = fc.record({
   state: optFieldArb,
   feature: optFieldArb,
   trigger: optFieldArb,
@@ -28,6 +39,17 @@ const fieldsArb: fc.Arbitrary<Fields> = fc.record({
   system: fieldArb,
   response: fieldArb,
 });
+
+const fieldsArb: fc.Arbitrary<Fields> = fc.oneof(
+  { weight: 1, arbitrary: ubiquitousArb },
+  { weight: 2, arbitrary: clauseArb },
+);
+
+function isUbiquitous(f: Fields): boolean {
+  return (
+    f.state === undefined && f.feature === undefined && f.trigger === undefined && f.condition === undefined
+  );
+}
 
 /** Build a statement independently of the printer, in canonical order. */
 function statementText(f: Fields): string {
@@ -62,11 +84,23 @@ describe("properties: round trip", () => {
         const first = parseOne(statementText(fields));
         expect(first.system).toBe(fields.system);
         expect(first.response).toBe(fields.response);
+        if (isUbiquitous(fields)) {
+          expect(first.pattern).toBe("ubiquitous");
+        }
         const second = parseOne(printRequirement(first));
         expect(stripLocation(second)).toEqual(stripLocation(first));
       }),
       { numRuns: 200 },
     );
+  });
+});
+
+describe("properties: generator coverage", () => {
+  it("ubiquitous share: at least 1 in 8 generated values have no clause", () => {
+    const samples = fc.sample(fieldsArb, { numRuns: 400, seed: 1 });
+    expect(samples).toHaveLength(400);
+    const ubiquitous = samples.filter(isUbiquitous).length;
+    expect(ubiquitous).toBeGreaterThanOrEqual(50);
   });
 });
 

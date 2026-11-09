@@ -2,7 +2,7 @@
 
 Test-only fix. Tests live in `tests/parser/`. Run tests with `npx vitest --run` and type check with `npx tsc --noEmit`. Do not change anything under `src/`.
 
-- [ ] 1. Generate ubiquitous requirements and guard the share
+- [x] 1. Generate ubiquitous requirements and guard the share
   - In `tests/parser/requirement-properties.test.ts`, split the generator into `ubiquitousArb` (state, feature, trigger and condition all `undefined`) and `clauseArb` (the existing record), and make `fieldsArb` a weighted `fc.oneof` of the two (weights 1 and 2) following design.md.
   - In the round-trip property, assert that the first parse has pattern `ubiquitous` when all four optional fields are absent.
   - Add a property `ubiquitous share`: sample 400 values from `fieldsArb` with a fixed seed, and fail if fewer than 1 in 8 (50) have no state, feature, trigger or condition.

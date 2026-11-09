@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseRequirementsText } from "../../src/parser/requirement-parser.js";
 import { printRequirement } from "../../src/parser/requirement-printer.js";
 import type { Requirement } from "../../src/parser/types.js";
 
@@ -17,6 +18,24 @@ function req(partial: Partial<Requirement>): Requirement {
 describe("printRequirement", () => {
   it("prints a ubiquitous requirement", () => {
     expect(printRequirement(req({}))).toBe("The parser SHALL parse files");
+  });
+
+  it("prints and re-parses a ubiquitous requirement", () => {
+    const printed = printRequirement(req({}));
+    const result = parseRequirementsText(`### Requirement 1: T\n\n1. ${printed}\n`, {
+      specName: "demo",
+      file: "demo.md",
+    });
+    expect(result.diagnostics).toEqual([]);
+    expect(result.requirements).toHaveLength(1);
+    const parsed = result.requirements[0] as Requirement;
+    expect(parsed.pattern).toBe("ubiquitous");
+    expect(parsed.system).toBe("parser");
+    expect(parsed.response).toBe("parse files");
+    expect(parsed.state).toBeUndefined();
+    expect(parsed.feature).toBeUndefined();
+    expect(parsed.trigger).toBeUndefined();
+    expect(parsed.condition).toBeUndefined();
   });
 
   it("prints an event-driven requirement", () => {
