@@ -1,12 +1,14 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { linkProject } from "../linker/index.js";
 import type { BodyMap, BodyMapCounts, RequirementStatus } from "../linker/index.js";
 import { parseProject, printRequirement } from "../parser/index.js";
+import { buildReport } from "../report/index.js";
 
 const SUMMARY_DIR = ".autopsy";
 const SUMMARY_FILE = "last.json";
+const REPORT_FILE = "report.json";
 
 export interface SummaryRequirement {
   id: string;
@@ -89,11 +91,27 @@ function section(label: string, none: string, items: SummaryRequirement[]): stri
   return [`New ${label} (${items.length}):`, ...items.map(describe)];
 }
 
+export interface AutopsyOptions {
+  /** Where to write the report; default `<root>/.autopsy/report.json`. A relative path uses the current directory. */
+  jsonPath?: string;
+  /** Tool version for the report; default is the `version` in this package's package.json. */
+  version?: string;
+}
+
+/** Reads `version` from the package.json two levels above `src/cli`. */
+async function readToolVersion(): Promise<string> {
+  const path = fileURLToPath(new URL("../../package.json", import.meta.url));
+  const parsed: unknown = JSON.parse(await readFile(path, "utf8"));
+  const version = (parsed as { version?: unknown }).version;
+  return typeof version === "string" ? version : "0.0.0";
+}
+
 /**
- * Runs the autopsy on `root`, writes `.autopsy/last.json` and returns the
+ * Runs the autopsy on `root`, writes `.autopsy/last.json` and the report
+ * (`.autopsy/report.json`, or `options.jsonPath`), and returns the
  * plain-text report. Deterministic; no network.
  */
-export async function runAutopsy(root: string): Promise<string> {
+export async function runAutopsy(root: string, options: AutopsyOptions = {}): Promise<string> {
   const absRoot = resolve(root);
   const map = await linkProject(absRoot);
   const parsed = await parseProject(absRoot);
@@ -105,6 +123,15 @@ export async function runAutopsy(root: string): Promise<string> {
 
   await mkdir(join(absRoot, SUMMARY_DIR), { recursive: true });
   await writeFile(summaryPath, `${JSON.stringify(current, null, 2)}\n`, "utf8");
+
+  const version = options.version ?? (await readToolVersion());
+  const report = buildReport(map, texts, { version });
+  const reportPath =
+    options.jsonPath !== undefined
+      ? resolve(options.jsonPath)
+      : join(absRoot, SUMMARY_DIR, REPORT_FILE);
+  await mkdir(dirname(reportPath), { recursive: true });
+  await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
 
   const c = current.counts;
   const lines: string[] = [
@@ -119,9 +146,27 @@ export async function runAutopsy(root: string): Promise<string> {
   return `${lines.join("\n")}\n`;
 }
 
+/** The first non-flag argument is the root; `--json <path>` sets the report path. */
+export function parseArgs(args: readonly string[]): { root: string; jsonPath?: string } {
+  let root: string | undefined;
+  let jsonPath: string | undefined;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i] as string;
+    if (arg === "--json") {
+      const next = args[i + 1];
+      if (next === undefined) throw new Error("--json needs a path");
+      jsonPath = next;
+      i++;
+    } else if (!arg.startsWith("--") && root === undefined) {
+      root = arg;
+    }
+  }
+  return jsonPath === undefined ? { root: root ?? "." } : { root: root ?? ".", jsonPath };
+}
+
 async function main(): Promise<void> {
-  const root = process.argv[2] ?? ".";
-  process.stdout.write(await runAutopsy(root));
+  const { root, jsonPath } = parseArgs(process.argv.slice(2));
+  process.stdout.write(await runAutopsy(root, jsonPath === undefined ? {} : { jsonPath }));
 }
 
 const entry = process.argv[1];
