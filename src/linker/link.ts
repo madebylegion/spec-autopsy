@@ -1,7 +1,8 @@
-import type { CodeIndex, FileIndex } from "../indexer/index.js";
+import type { CodeIndex, FileIndex, KiroCommit } from "../indexer/index.js";
 import type { Diagnostic, Requirement, TaskEntry } from "../parser/index.js";
 import { classifyRequirement, findZombies, symbolKey } from "./classify.js";
 import { commitHits, resolveTaskCommits, unknownTaskRequirements } from "./commit-links.js";
+import { filterHitsByDesign } from "./design-filter.js";
 import {
   NEAR_MISS,
   overlapScore,
@@ -16,6 +17,7 @@ import type {
   BodyMapDiagnostic,
   CodeLink,
   LastCommit,
+  LinkExtras,
   NearMiss,
   RequirementEntry,
   TestLink,
@@ -139,15 +141,44 @@ function zombieNearMiss(zombie: Zombie, works: readonly Work[]): NearMiss | unde
 }
 
 /**
+ * Rule 4: the checked task with the lowest number that lists `id` and that a
+ * resolved task commit names; among commits of that task the first in
+ * `commits` order. Undefined when there is none.
+ */
+function contradictionOf(
+  id: string,
+  checked: ReadonlySet<string> | undefined,
+  commits: readonly KiroCommit[] | undefined,
+  resolved: ReadonlyMap<string, TaskEntry>,
+): { task: number; commit: string } | undefined {
+  if (checked === undefined || commits === undefined) return undefined;
+  let best: { task: number; commit: string } | undefined;
+  for (const commit of commits) {
+    const task = resolved.get(commit.sha);
+    if (task === undefined) continue;
+    if (!checked.has(`${task.spec}#${task.number}`)) continue;
+    if (!task.requirements.some((ref) => ref.id === id)) continue;
+    if (best === undefined || task.number < best.task) {
+      best = { task: task.number, commit: commit.sha };
+    }
+  }
+  return best;
+}
+
+/**
  * Joins requirements, the code index and the tests into a body map.
- * Pure and deterministic: commit links first, then tags, then token overlap
- * for requirements without an explicit link on that side, then classification.
+ * Pure and deterministic: commit links first (design symbol filter), then
+ * tags, then token overlap for requirements without an explicit link on that
+ * side, then classification (test-only tasks, defect descriptions, doubtful
+ * ghosts). `extras` carries data read elsewhere; without it the result is the
+ * one `link` gave before those rules.
  */
 export function link(
   requirements: readonly Requirement[],
   index: CodeIndex,
   parserDiagnostics: readonly Diagnostic[] = [],
   tasks: readonly TaskEntry[] = [],
+  extras: LinkExtras = {},
 ): BodyMap {
   const works: Work[] = requirements.map((req) => ({
     req,
@@ -163,13 +194,19 @@ export function link(
     if (!firstById.has(work.req.id)) firstById.set(work.req.id, work);
   }
 
+  // Rule 3: a defect description stays known to ids but is not part of the verdict.
+  const active = works.filter((work) => work.req.defectDescription !== true);
+
   const linkerDiagnostics: BodyMapDiagnostic[] = [];
   const linkedSymbols = new Set<string>();
+  const testOnlyShas: ReadonlySet<string> = new Set(index.testOnlyCommits ?? []);
+  const testOnlyOf = new Map<Work, string>();
 
   // 0. Commit links: commit, then task, then requirement ids, then the lines it owns.
   linkerDiagnostics.push(...unknownTaskRequirements(tasks, new Set(firstById.keys())));
   const resolved = resolveTaskCommits(index.kiroCommits, tasks);
-  for (const hit of commitHits(index, resolved)) {
+  const hits = filterHitsByDesign(commitHits(index, resolved), extras.designTexts);
+  for (const hit of hits) {
     for (const ref of hit.task.requirements) {
       const work = firstById.get(ref.id);
       if (work === undefined) continue;
@@ -190,6 +227,7 @@ export function link(
       } else {
         const key = testKey(hit.file, hit.testCase.line, hit.testCase.title);
         work.explicitTest = true;
+        if (testOnlyShas.has(hit.sha) && !testOnlyOf.has(work)) testOnlyOf.set(work, hit.sha);
         if (!work.tests.has(key)) {
           work.tests.set(key, {
             title: hit.testCase.title,
@@ -251,7 +289,7 @@ export function link(
   }
 
   // 2. Token overlap, per side, only where there is no explicit link.
-  for (const work of works) {
+  for (const work of active) {
     const reqTokens = requirementTokens(work.req);
     if (!work.explicitCode) {
       for (const file of index.files) {
@@ -295,7 +333,18 @@ export function link(
     if (!filesByPath.has(file.path)) filesByPath.set(file.path, file);
   }
 
-  const entries: RequirementEntry[] = works.map((work) => {
+  for (const work of works) {
+    if (work.req.defectDescription !== true) continue;
+    linkerDiagnostics.push({
+      source: "linker",
+      code: "defect-description",
+      message: `${work.req.id}: describes the current defect, not a behavior to build; left out of the verdict.`,
+      file: work.req.file,
+      line: work.req.line,
+    });
+  }
+
+  const entries: RequirementEntry[] = active.map((work) => {
     const codeLinks = [...work.code.values()].sort(
       (a, b) =>
         compareCodeUnits(a.file, b.file) ||
@@ -315,15 +364,35 @@ export function link(
       testLinks,
       lastCommit: lastCommitOf(codeLinks, filesByPath),
     };
+    const testOnlySha = testOnlyOf.get(work);
+    if (codeLinks.length === 0 && testOnlySha !== undefined) {
+      // Rule 2: built by a test-only task, so there is no code to link.
+      entry.status = "proven";
+      entry.testOnlyCommit = testOnlySha;
+      linkerDiagnostics.push({
+        source: "linker",
+        code: "test-only-task",
+        message: `${work.req.id}: implemented by test-only task commit ${testOnlySha.slice(0, 7)}`,
+        file: work.req.file,
+        line: work.req.line,
+      });
+    }
     if (entry.status === "ghost") {
       const nearMiss = ghostNearMiss(work.req, index);
       if (nearMiss !== undefined) entry.nearMiss = nearMiss;
+      const contradiction = contradictionOf(
+        work.req.id,
+        extras.checkedTasks,
+        index.kiroCommits,
+        resolved,
+      );
+      if (contradiction !== undefined) entry.contradiction = contradiction;
     }
     return entry;
   });
 
   const zombies = findZombies(index, linkedSymbols).map((zombie): Zombie => {
-    const nearMiss = zombieNearMiss(zombie, works);
+    const nearMiss = zombieNearMiss(zombie, active);
     return nearMiss === undefined ? zombie : { ...zombie, nearMiss };
   });
 

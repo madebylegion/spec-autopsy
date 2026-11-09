@@ -85,5 +85,16 @@
       { "path": "src/stock.ts", "lines": [[44, 47]] },
       { "path": "tests/stock.test.ts", "lines": [[27, 32]] }
     ]
+  },
+  {
+    "message": "kiro: weighbridge-fix task 1 Test the kilo conversion",
+    "files": [{ "path": "tests/weighbridge.test.ts", "lines": [[1, 11]] }]
+  },
+  {
+    "message": "kiro: weighbridge-fix task 2 Zero readings below the floor",
+    "files": [
+      "src/weighbridge.ts",
+      { "path": "tests/weighbridge.test.ts", "lines": [[12, 15]] }
+    ]
   }
 ]

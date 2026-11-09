@@ -46,6 +46,14 @@ export interface NearMiss {
   score: number;
 }
 
+/** Optional data that `link` receives from the readers. All of it may be absent. */
+export interface LinkExtras {
+  /** Spec folder name -> text of its design.md. */
+  designTexts?: ReadonlyMap<string, string>;
+  /** `<spec>#<N>` of every task marked [x]. */
+  checkedTasks?: ReadonlySet<string>;
+}
+
 export interface RequirementEntry {
   id: string;
   status: RequirementStatus;
@@ -56,6 +64,10 @@ export interface RequirementEntry {
   lastCommit: LastCommit | null;
   /** Ghosts only, and only when a near miss exists. */
   nearMiss?: NearMiss;
+  /** SHA of the test-only task commit that made this requirement proven. */
+  testOnlyCommit?: string;
+  /** Ghosts only: a checked task with a resolved commit lists this requirement. */
+  contradiction?: { task: number; commit: string };
 }
 
 export interface Zombie {
@@ -69,7 +81,9 @@ export interface Zombie {
 
 export interface BodyMapDiagnostic {
   source: "parser" | "indexer" | "linker";
-  code: string; // linker codes: "unknown-requirement-tag", "unknown-task-requirement", "link-failed"
+  // linker codes: "unknown-requirement-tag", "unknown-task-requirement", "link-failed",
+  // "defect-description", "test-only-task"
+  code: string;
   message: string;
   file: string;
   line: number | null; // null for index diagnostics

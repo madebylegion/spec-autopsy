@@ -1,5 +1,5 @@
 import { indexRepo } from "../indexer/index.js";
-import { parseProject, parseTasksProject } from "../parser/index.js";
+import { parseProject, parseTasksProject, readCheckedTasks, readDesignTexts } from "../parser/index.js";
 import { link } from "./link.js";
 import type { BodyMap } from "./types.js";
 
@@ -7,6 +7,7 @@ export { scoreAgainstTruth } from "./accuracy.js";
 export { classifyRequirement, findZombies, isZombieCandidate, symbolKey } from "./classify.js";
 export { commitHits, ownerAt, resolveTaskCommits, unknownTaskRequirements } from "./commit-links.js";
 export type { CommitHit } from "./commit-links.js";
+export { isNamedInDesign } from "./design-filter.js";
 export { link } from "./link.js";
 export {
   NEAR_MISS,
@@ -27,6 +28,7 @@ export type {
   ClassScore,
   CodeLink,
   LastCommit,
+  LinkExtras,
   LinkMethod,
   NearMiss,
   RequirementEntry,
@@ -48,8 +50,10 @@ export async function linkProject(root: string): Promise<BodyMap> {
   try {
     const parsed = await parseProject(root);
     const tasks = await parseTasksProject(root);
+    const designTexts = await readDesignTexts(root);
+    const checkedTasks = await readCheckedTasks(root);
     const index = await indexRepo(root);
-    return link(parsed.requirements, index, parsed.diagnostics, tasks);
+    return link(parsed.requirements, index, parsed.diagnostics, tasks, { designTexts, checkedTasks });
   } catch (error) {
     return {
       root,
