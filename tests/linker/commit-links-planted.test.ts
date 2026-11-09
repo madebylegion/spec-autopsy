@@ -60,13 +60,13 @@ describe("commit links on the planted fixture", () => {
     }
   });
 
-  it("keeps the 4 ghosts, 4 unproven and 5 zombies of expected.json", () => {
+  it("keeps the 4 ghosts, 4 unproven and 6 zombies of expected.json", () => {
     expect(withGit.diagnostics.filter((d) => d.code === "link-failed")).toEqual([]);
     expect(withGit.diagnostics.filter((d) => d.code === "unknown-task-requirement")).toEqual([]);
     expect(findings(withGit)).toEqual(truth);
     expect(withGit.counts.ghost).toBe(4);
     expect(withGit.counts.unproven).toBe(4);
-    expect(withGit.counts.zombies).toBe(5);
+    expect(withGit.counts.zombies).toBe(6);
   });
 
   it("handles the same tree without git: no commit links, the chain-only requirements are ghosts", () => {

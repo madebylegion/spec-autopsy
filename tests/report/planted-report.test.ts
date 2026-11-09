@@ -39,8 +39,8 @@ describe("planted fixture report", () => {
     if (dir !== "") await rm(dir, { recursive: true, force: true });
   });
 
-  it("has the 13 planted findings, by class and key", () => {
-    expect(expected.length).toBe(13);
+  it("has the 14 planted findings, by class and key", () => {
+    expect(expected.length).toBe(14);
     const got = report.findings.map((f) => `${f.type} ${keyOf(f)}`).sort();
     const want = expected.map((e) => `${e.class} ${e.key}`).sort();
     expect(got).toEqual(want);

@@ -11,5 +11,6 @@
   { "class": "zombie", "key": "src/stock.ts#recordStockAdjustmentReasons" },
   { "class": "zombie", "key": "src/stock.ts#legacyCsvExport" },
   { "class": "zombie", "key": "src/orders.ts#OrderDebugFlags" },
-  { "class": "zombie", "key": "src/shipping.py#export_audit_blob" }
+  { "class": "zombie", "key": "src/shipping.py#export_audit_blob" },
+  { "class": "zombie", "key": "src/weighbridge.ts#calibrationStamp" }
 ]

@@ -38,6 +38,7 @@ const FILES = {
   "tests/b.test.ts": "export const b = 1;\n",
   "src/c.ts": "export const c = 1;\n",
   "src/d.ts": "export const d = 1;\n",
+  ".kiro/specs/s/tasks.md": "- [x] 1. Do it\n",
 };
 
 afterAll(() => {
@@ -52,6 +53,37 @@ describe("indexRepo testOnlyCommits", () => {
     ]);
     const index = await indexRepo(repo);
     expect(index.testOnlyCommits).toEqual([shaOf(index, "kiro: only tests")]);
+  }, 60_000);
+
+  it("lists a kiro commit of a test file plus a .kiro/ file", async () => {
+    const repo = await makeRepo(FILES, [
+      { message: "kiro: tests and checkbox", files: ["tests/a.test.ts", ".kiro/specs/s/tasks.md"] },
+      { message: "kiro: only source", files: ["src/c.ts"] },
+    ]);
+    const index = await indexRepo(repo);
+    expect(index.testOnlyCommits).toEqual([shaOf(index, "kiro: tests and checkbox")]);
+  }, 60_000);
+
+  it("does not list a commit of a test file, a .kiro/ file and one source file", async () => {
+    const repo = await makeRepo(FILES, [
+      {
+        message: "kiro: tests, checkbox and source",
+        files: ["tests/a.test.ts", ".kiro/specs/s/tasks.md", "src/c.ts"],
+      },
+      { message: "kiro: only tests", files: ["tests/b.test.ts"] },
+    ]);
+    const index = await indexRepo(repo);
+    expect(index.testOnlyCommits).toEqual([shaOf(index, "kiro: only tests")]);
+  }, 60_000);
+
+  it("does not list a commit that changes only .kiro/ files", async () => {
+    const repo = await makeRepo(FILES, [
+      { message: "kiro: only checkbox", files: [".kiro/specs/s/tasks.md"] },
+      { message: "kiro: source", files: ["src/c.ts"] },
+    ]);
+    const index = await indexRepo(repo);
+    expect(index.kiroCommits?.length).toBe(2);
+    expect(index.testOnlyCommits).toBeUndefined();
   }, 60_000);
 
   it("does not list a commit with one test and one source file", async () => {

@@ -3,6 +3,7 @@ import { link } from "../../src/linker/link.js";
 import {
   COMMIT_A,
   SHA_A,
+  SHA_B,
   TASK_1,
   file,
   index,
@@ -34,9 +35,23 @@ describe("design symbol filter", () => {
     expect(entry?.codeLinks[0]?.method).toBe("commit");
   });
 
-  it("makes a dropped exported symbol a zombie", () => {
+  it("links a dropped exported symbol to nothing, and it is no zombie because a task commit wrote it", () => {
     const map = linkWith(new Map([["spec", "The task builds `alpha` only."]]));
-    expect(map.zombies.map((z) => z.symbol)).toEqual(["beta"]);
+    for (const r of map.requirements) {
+      expect(r.codeLinks.map((l) => l.symbol)).not.toContain("beta");
+    }
+    expect(map.zombies).toEqual([]);
+    expect(map.counts.zombies).toBe(0);
+  });
+
+  it("keeps an exported symbol that no task commit wrote a zombie", () => {
+    const other = file("src/c.ts", {
+      symbols: [sym("gamma", 2, 4, "function", true, "src/c.ts")],
+      blame: [owned(SHA_B, 1, 5)],
+    });
+    const map = linkWith(new Map([["spec", "The task builds `alpha` only."]]), [codeFile(), other]);
+    expect(map.requirements[0]?.codeLinks.map((l) => l.symbol)).toEqual(["alpha"]);
+    expect(map.zombies.map((z) => z.symbol)).toEqual(["gamma"]);
     expect(map.counts.zombies).toBe(1);
   });
 

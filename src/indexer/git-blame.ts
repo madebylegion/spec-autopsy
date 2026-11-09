@@ -35,10 +35,16 @@ export async function readKiroCommits(root: string): Promise<KiroCommit[]> {
   }
 }
 
+/** Spec bookkeeping (tasks.md checkboxes and the like) lives under `.kiro/`. */
+function isBookkeepingPath(path: string): boolean {
+  return path.startsWith(".kiro/");
+}
+
 /**
- * The given commit SHAs that change at least one file and only test files
- * (by `isTestPath`), in the order of `shas`. One `git log --name-only` call.
- * Any failure gives an empty list. Never throws.
+ * The given commit SHAs that change at least one test file (by `isTestPath`)
+ * and whose every other changed file is a test file or starts with `.kiro/`,
+ * in the order of `shas`. One `git log --name-only` call. Any failure gives an
+ * empty list. Never throws.
  */
 export async function readTestOnlyCommits(root: string, shas: readonly string[]): Promise<string[]> {
   try {
@@ -58,7 +64,12 @@ export async function readTestOnlyCommits(root: string, shas: readonly string[])
       const sha = (lines[0] ?? "").trim();
       if (sha === "") continue;
       const files = lines.slice(1).filter((l) => l.trim() !== "");
-      if (files.length > 0 && files.every((f) => isTestPath(f))) testOnly.add(sha);
+      if (
+        files.some((f) => isTestPath(f)) &&
+        files.every((f) => isTestPath(f) || isBookkeepingPath(f))
+      ) {
+        testOnly.add(sha);
+      }
     }
     return shas.filter((sha) => testOnly.has(sha));
   } catch {

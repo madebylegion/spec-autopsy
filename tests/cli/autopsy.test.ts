@@ -85,7 +85,7 @@ describe("autopsy CLI", () => {
     const pkg = JSON.parse(await readFile(packageJson, "utf8")) as { version: string };
     if (result.ok) {
       expect(result.report.tool.version).toBe(pkg.version);
-      expect(result.report.findings.length).toBe(13);
+      expect(result.report.findings.length).toBe(14);
     }
   }, 60_000);
 

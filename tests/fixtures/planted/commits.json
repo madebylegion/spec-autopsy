@@ -88,13 +88,20 @@
   },
   {
     "message": "kiro: weighbridge-fix task 1 Test the kilo conversion",
-    "files": [{ "path": "tests/weighbridge.test.ts", "lines": [[1, 11]] }]
+    "files": [
+      { "path": "tests/weighbridge.test.ts", "lines": [[1, 11]] },
+      ".kiro/specs/weighbridge-fix/tasks.md"
+    ]
   },
   {
     "message": "kiro: weighbridge-fix task 2 Zero readings below the floor",
     "files": [
-      "src/weighbridge.ts",
+      { "path": "src/weighbridge.ts", "lines": [[1, 13]] },
       { "path": "tests/weighbridge.test.ts", "lines": [[12, 15]] }
     ]
+  },
+  {
+    "message": "chore: add calibration stamp",
+    "files": [{ "path": "src/weighbridge.ts", "lines": [[14, 17]] }]
   }
 ]

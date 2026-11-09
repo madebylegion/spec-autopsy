@@ -2,6 +2,7 @@ import type { CodeIndex, FileIndex, KiroCommit } from "../indexer/index.js";
 import type { Diagnostic, Requirement, TaskEntry } from "../parser/index.js";
 import { classifyRequirement, findZombies, symbolKey } from "./classify.js";
 import { commitHits, resolveTaskCommits, unknownTaskRequirements } from "./commit-links.js";
+import type { CommitHit } from "./commit-links.js";
 import { filterHitsByDesign } from "./design-filter.js";
 import {
   NEAR_MISS,
@@ -199,13 +200,23 @@ export function link(
 
   const linkerDiagnostics: BodyMapDiagnostic[] = [];
   const linkedSymbols = new Set<string>();
+  const adoptedSymbols = new Set<string>();
   const testOnlyShas: ReadonlySet<string> = new Set(index.testOnlyCommits ?? []);
   const testOnlyOf = new Map<Work, string>();
 
   // 0. Commit links: commit, then task, then requirement ids, then the lines it owns.
   linkerDiagnostics.push(...unknownTaskRequirements(tasks, new Set(firstById.keys())));
   const resolved = resolveTaskCommits(index.kiroCommits, tasks);
-  const hits = filterHitsByDesign(commitHits(index, resolved), extras.designTexts);
+  const allHits = commitHits(index, resolved);
+  const hits = filterHitsByDesign(allHits, extras.designTexts);
+  // Rule 1: a symbol the design filter dropped proves no requirement, but a
+  // resolved task commit wrote it, so it is adopted: linked to nothing, no zombie.
+  const keptHits = new Set<CommitHit>(hits);
+  for (const hit of allHits) {
+    if (hit.kind === "symbol" && !keptHits.has(hit)) {
+      adoptedSymbols.add(symbolKey(hit.file, hit.symbol.startLine, hit.symbol.name));
+    }
+  }
   for (const hit of hits) {
     for (const ref of hit.task.requirements) {
       const work = firstById.get(ref.id);
@@ -391,7 +402,8 @@ export function link(
     return entry;
   });
 
-  const zombies = findZombies(index, linkedSymbols).map((zombie): Zombie => {
+  const notZombies = new Set<string>([...linkedSymbols, ...adoptedSymbols]);
+  const zombies = findZombies(index, notZombies).map((zombie): Zombie => {
     const nearMiss = zombieNearMiss(zombie, active);
     return nearMiss === undefined ? zombie : { ...zombie, nearMiss };
   });

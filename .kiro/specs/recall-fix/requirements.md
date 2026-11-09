@@ -4,7 +4,7 @@
 
 The commit link (spec `task-commit-link`) has two measured defects.
 
-False ghosts. The self-autopsy of this repository (`npm run autopsy`) shows 7 ghosts, all in `printer-ubiquitous-gap`: R1.1, R2.1, R2.3, R3.1, R3.2, R3.4 and R3.5. All 7 were checked by hand and all are false. That spec is a test-only bugfix, so its task 1 commit wrote test files only, and `classifyRequirement` says "no code link means ghost". A requirement built by a test-only task can never leave the ghost state. R1.1 sits in the bugfix template section "Current behavior": it describes the defect as it is today, there is nothing to build, and no task lists it.
+False ghosts. The self-autopsy of this repository (`npm run autopsy`) shows 7 ghosts, all in `printer-ubiquitous-gap`: R1.1, R2.1, R2.3, R3.1, R3.2, R3.4 and R3.5. All 7 were checked by hand and all are false. That spec is a test-only bugfix, so its task 1 commit wrote test files only (plus the checkbox in its own `tasks.md`), and `classifyRequirement` says "no code link means ghost". A requirement built by a test-only task can never leave the ghost state. R1.1 sits in the bugfix template section "Current behavior": it describes the defect as it is today, there is nothing to build, and no task lists it.
 
 Low recall. A task commit links all the symbols it wrote to all requirements of its task, so one unrelated helper wrongly proves a requirement and the link is coarse (recall 0.45 and precision 0.71 on a blind fixture). The `design.md` of each spec names the symbols and files the task builds.
 
@@ -16,8 +16,10 @@ Requirement IDs follow the convention of the EARS parser: `recall-fix/R<N>.<M>`,
 
 - **Design text**: the text of `.kiro/specs/<spec>/design.md`.
 - **Named symbol**: a symbol whose name occurs in the design text of the spec of its task, as a backticked identifier or as a whole word, compared case-sensitively and exactly.
+- **Adopted symbol**: a symbol written by a resolved task commit that the design symbol filter dropped. It proves no requirement, and it is not a zombie.
 - **Test file**: a file for which the indexer rule `isTestPath` is true.
-- **Test-only task**: a resolved task whose task commit changed at least one file and only test files.
+- **Spec bookkeeping file**: a changed file whose path starts with `.kiro/`, such as the `tasks.md` checkbox a task commit ticks.
+- **Test-only task**: a resolved task whose task commit changed at least one test file, and whose other changed files, if any, are all spec bookkeeping files.
 - **Defect description**: a requirement under a Requirement heading that says "current behavior" (ignoring case), in a `requirements.md` that also has a heading saying "expected behavior" or "unchanged behavior" (the Kiro bugfix template: Current Behavior, Expected Behavior, Unchanged Behavior).
 - **Doubtful ghost**: a ghost that is listed by a task that is checked `[x]` in `tasks.md` and whose task commit is resolved. The tool contradicts itself there.
 - **Extras**: the optional fifth parameter of `link`, holding `designTexts` and `checkedTasks`.
@@ -37,7 +39,7 @@ Requirement IDs follow the convention of the EARS parser: `recall-fix/R<N>.<M>`,
 4. WHEN the name of a symbol occurs in the design text with no identifier character (letter, digit, underscore or dollar sign) directly before or after it, THEN the linker SHALL count the symbol as named, comparing case-sensitively and by exact text, so that `Requirement` does not match `requirement` and `link` does not match `linker`, and for a dotted name such as `Class.method` the whole name or the part after the last dot SHALL count.
 5. IF the spec of the task has no design text, or none of the symbols the commit wrote is named in it, THEN the linker SHALL NOT filter any symbol of that commit.
 6. The linker SHALL NOT filter test cases, tag links or overlap links.
-7. WHEN a symbol is filtered out of a commit link, THEN the linker SHALL NOT count it as linked, so that an exported symbol of that kind remains a zombie candidate.
+7. WHEN a symbol is filtered out of a commit link, THEN the linker SHALL NOT link it to any requirement through that commit, and SHALL NOT report it as a zombie, because a resolved task commit wrote it. A symbol that no resolved task commit wrote, and that no requirement links to, SHALL stay a zombie candidate as before.
 8. The links produced with design texts SHALL be a subset of the links produced without them, for code links and for test links.
 
 ### Requirement 2: Test-only tasks
@@ -46,7 +48,7 @@ Requirement IDs follow the convention of the EARS parser: `recall-fix/R<N>.<M>`,
 
 #### Acceptance Criteria
 
-1. WHEN `kiroCommits` is not empty, THEN the indexer SHALL set the optional field `testOnlyCommits` of the code index to the SHAs of the `kiro:` commits that changed at least one file and only test files, and SHALL leave the field unset when there is none.
+1. WHEN `kiroCommits` is not empty, THEN the indexer SHALL set the optional field `testOnlyCommits` of the code index to the SHAs of the `kiro:` commits that changed at least one test file and whose every other changed file is a test file or a spec bookkeeping file (a path starting with `.kiro/`), and SHALL leave the field unset when there is none.
 2. The indexer SHALL read the files changed by the commits through `git log --name-only` run with `child_process.execFile` and without a shell.
 3. IF git fails, THEN the indexer SHALL leave `testOnlyCommits` unset and SHALL NOT throw.
 4. WHEN a requirement has no code link and has at least one test link with method `commit` whose commit is in `testOnlyCommits`, THEN the linker SHALL classify the requirement as `proven`.
@@ -98,13 +100,13 @@ Requirement IDs follow the convention of the EARS parser: `recall-fix/R<N>.<M>`,
 
 #### Acceptance Criteria
 
-1. The planted fixture SHALL gain one test-only bugfix spec `weighbridge-fix` with `requirements.md`, `design.md` and `tasks.md`, the files `src/weighbridge.ts` and `tests/weighbridge.test.ts`, and two appended commits in `commits.json`.
-2. The first appended commit SHALL be a test-only task commit, and the second SHALL write a named symbol and a helper symbol that `design.md` does not name.
-3. The planted fixture SHALL NOT change or remove any existing entry of `expected.json`, and the new spec SHALL add no ghost, unproven or zombie finding, so that `expected.json` needs no new entry.
+1. The planted fixture SHALL gain one test-only bugfix spec `weighbridge-fix` with `requirements.md`, `design.md` and `tasks.md`, the files `src/weighbridge.ts` and `tests/weighbridge.test.ts`, and appended commits in `commits.json`.
+2. The first appended commit SHALL be a test-only task commit that also changes the `tasks.md` of its spec, and the second SHALL write a named symbol and exported and non-exported helper symbols that `design.md` does not name. A further appended non-task commit SHALL write one exported function that no spec names.
+3. The planted fixture SHALL NOT change or remove any existing entry of `expected.json`. The new spec adds no ghost or unproven finding; the exported function of the non-task commit is a zombie and is appended to `expected.json` as one new entry.
 4. The accuracy test SHALL keep asserting planted overall precision and overall recall of at least 0.8 and SHALL keep printing them in the same format.
 5. The maintainers SHALL NOT edit anything under `tests/fixtures/heldout` or `tests/fixtures/blind3`, and SHALL NOT tune the rules on them.
 6. The repository SHALL contain fast-check properties: the design symbol filter never adds a link, `link` with no extras and no test-only data equals the result before this feature, and two runs give deep-equal results.
-7. The maintainers SHALL NOT edit the assertions of an existing test to make it pass.
+7. The maintainers SHALL NOT edit the assertions of an existing test to make it pass, except a test that asserted a behavior these requirements deliberately change.
 8. IF an existing test fails because of the new behavior, THEN design.md and the final summary SHALL name that test.
 
 ### Requirement 7: Self-autopsy acceptance

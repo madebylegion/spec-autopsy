@@ -49,7 +49,7 @@ describe("recall-fix rules on the planted fixture", () => {
     expect(diags[0]?.line).toBeGreaterThan(0);
   });
 
-  it("proves R2.1 and R3.1 through the test-only task commit", () => {
+  it("proves R2.1 and R3.1 through the test-only task commit (which also ticks tasks.md)", () => {
     for (const id of ["weighbridge-fix/R2.1", "weighbridge-fix/R3.1"]) {
       const entry = map.requirements.find((r) => r.id === id);
       expect(entry, id).toBeDefined();
@@ -79,6 +79,23 @@ describe("recall-fix rules on the planted fixture", () => {
       expect(r.codeLinks.map((l) => l.symbol)).not.toContain("sieveStub");
     }
     expect(map.zombies.map((z) => z.symbol)).not.toContain("sieveStub");
+  });
+
+  it("links the exported unnamed helper tareOffset to nothing, and it is no zombie (task 2 wrote it)", () => {
+    for (const r of map.requirements) {
+      expect(r.codeLinks.map((l) => l.symbol)).not.toContain("tareOffset");
+    }
+    expect(map.zombies.map((z) => z.symbol)).not.toContain("tareOffset");
+  });
+
+  it("keeps calibrationStamp, written by a non-task commit, a zombie", () => {
+    for (const r of map.requirements) {
+      expect(r.codeLinks.map((l) => l.symbol)).not.toContain("calibrationStamp");
+    }
+    expect(map.zombies.map((z) => [z.file, z.symbol])).toContainEqual([
+      "src/weighbridge.ts",
+      "calibrationStamp",
+    ]);
   });
 
   it("keeps the findings of expected.json", () => {
