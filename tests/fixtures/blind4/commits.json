@@ -1,0 +1,64 @@
+[
+  {
+    "message": "kiro: booking task 1 Create and validate bookings",
+    "files": [
+      { "path": "src/booking/booking.ts", "lines": [[1, 35]] },
+      "tests/booking/booking.test.ts"
+    ]
+  },
+  {
+    "message": "kiro: booking task 2 Cancellation",
+    "files": [
+      { "path": "src/booking/booking.ts", "lines": [[36, 45]] },
+      "tests/booking/cancel.test.ts"
+    ]
+  },
+  {
+    "message": "kiro: reminders task 1 Reminder scheduling",
+    "files": [
+      "src/reminders/reminders.ts",
+      "src/util/strings.ts",
+      "tests/reminders/reminders.test.ts"
+    ]
+  },
+  {
+    "message": "kiro: reminders task 3 Reminder text",
+    "files": [
+      "src/reminders/reminder_text.py",
+      "tests/reminders/test_reminder_text.py"
+    ]
+  },
+  {
+    "message": "kiro: waitlist task 1 Joining the waitlist",
+    "files": [
+      { "path": "src/waitlist/waitlist.ts", "lines": [[1, 21]] },
+      "tests/waitlist/join.test.ts"
+    ]
+  },
+  {
+    "message": "kiro: waitlist task 2 Promotion",
+    "files": [
+      { "path": "src/waitlist/waitlist.ts", "lines": [[22, 37]] },
+      "tests/waitlist/promotion.test.ts"
+    ]
+  },
+  {
+    "message": "kiro: waitlist task 3 Position lookup",
+    "files": [
+      { "path": "src/waitlist/waitlist.ts", "lines": [[38, 41]] },
+      "tests/waitlist/position.test.ts"
+    ]
+  },
+  {
+    "message": "feat: csv export for the front desk",
+    "files": ["src/booking/csv-export.ts"]
+  },
+  {
+    "message": "fix: typo in comment",
+    "files": ["src/waitlist/stats.ts"]
+  },
+  {
+    "message": "chore: lint",
+    "files": ["src/util/clock.ts"]
+  }
+]

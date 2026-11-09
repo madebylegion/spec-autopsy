@@ -1,0 +1,13 @@
+[
+  { "class": "ghost", "key": "booking/R2.2" },
+  { "class": "ghost", "key": "reminders/R1.2" },
+  { "class": "ghost", "key": "reminders/R2.2" },
+  { "class": "unproven", "key": "booking/R1.3" },
+  { "class": "unproven", "key": "reminders/R1.3" },
+  { "class": "unproven", "key": "waitlist/R1.2" },
+  { "class": "unproven", "key": "waitlist/R2.2" },
+  { "class": "zombie", "key": "src/util/strings.ts#padTwo" },
+  { "class": "zombie", "key": "src/booking/csv-export.ts#exportAppointmentsCsv" },
+  { "class": "zombie", "key": "src/waitlist/stats.ts#queueSizesByDay" },
+  { "class": "zombie", "key": "src/util/clock.ts#SYSTEM_TIMEZONE" }
+]
