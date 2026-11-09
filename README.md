@@ -15,3 +15,9 @@ Build it with `npm run morgue`. It writes `src/ui/public/report.json` and builds
 Two design decisions (see `.kiro/specs/morgue-pass-2/design.md`):
 - The steel panel comes from an SVG hairline pattern and token-coloured shadows, not CSS gradients (the style rules test forbids gradients).
 - The stamp uses its own dark ink tokens (`--ghost-stamp`, `--zombie-stamp`, `--unproven-stamp`), because the accent colours are too light on manila paper.
+
+## Ask your agent about the report
+The MCP server in `src/mcp/server.ts` is registered as `spec-autopsy` in `.kiro/settings/mcp.json`.
+Ask your agent "which requirements are ghosts?" and it calls `list_ghosts`.
+The other tools are `list_findings` and `explain`; all three are auto-approved.
+Every answer carries requirement ID, file and line, and nothing leaves your machine.
