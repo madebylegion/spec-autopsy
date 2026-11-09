@@ -17,6 +17,7 @@ export interface Requirement {
   response: string; // text after SHALL
   file: string; // as passed in; project-relative, "/" separators
   line: number; // 1-based
+  defectDescription?: true; // only on a "Current behavior" requirement of a bugfix spec
 }
 
 export type DiagnosticCode =

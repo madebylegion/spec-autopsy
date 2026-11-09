@@ -1,5 +1,6 @@
 import { runGit } from "./run-git.js";
 import type { BlameRange, KiroCommit } from "./types.js";
+import { isTestPath } from "./walker.js";
 
 /** True when the repository is a shallow clone. Any failure gives false. */
 export async function isShallow(root: string): Promise<boolean> {
@@ -29,6 +30,37 @@ export async function readKiroCommits(root: string): Promise<KiroCommit[]> {
       if (/^kiro:/i.test(subject)) commits.push({ sha, subject });
     }
     return commits;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The given commit SHAs that change at least one file and only test files
+ * (by `isTestPath`), in the order of `shas`. One `git log --name-only` call.
+ * Any failure gives an empty list. Never throws.
+ */
+export async function readTestOnlyCommits(root: string, shas: readonly string[]): Promise<string[]> {
+  try {
+    if (shas.length === 0) return [];
+    const out = await runGit(root, [
+      "-c",
+      "core.quotepath=false",
+      "log",
+      "--name-only",
+      "--format=%x1e%H",
+    ]);
+    if (out === undefined) return [];
+    const testOnly = new Set<string>();
+    for (const chunk of out.split("\x1e")) {
+      if (chunk === "") continue;
+      const lines = chunk.split("\n");
+      const sha = (lines[0] ?? "").trim();
+      if (sha === "") continue;
+      const files = lines.slice(1).filter((l) => l.trim() !== "");
+      if (files.length > 0 && files.every((f) => isTestPath(f))) testOnly.add(sha);
+    }
+    return shas.filter((sha) => testOnly.has(sha));
   } catch {
     return [];
   }

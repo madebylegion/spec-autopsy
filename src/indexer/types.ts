@@ -48,4 +48,5 @@ export interface CodeIndex {
   files: FileIndex[];
   diagnostics: IndexDiagnostic[];
   kiroCommits?: KiroCommit[];
+  testOnlyCommits?: string[];  // SHAs of kiro commits that change test files only, in kiroCommits order
 }

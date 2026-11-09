@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Tree } from "web-tree-sitter";
 import { extractComments, extractTestCases } from "./comments.js";
-import { isShallow, readBlame, readKiroCommits } from "./git-blame.js";
+import { isShallow, readBlame, readKiroCommits, readTestOnlyCommits } from "./git-blame.js";
 import { readGitHistory } from "./git-history.js";
 import { getParser, languageForExtension } from "./grammar-loader.js";
 import { extractPy } from "./py-extractor.js";
@@ -110,6 +110,20 @@ export async function indexRepo(root: string): Promise<CodeIndex> {
     }
   } catch {
     kiroCommits = undefined;
+  }
+
+  // Task commits that change test files only.
+  let testOnlyCommits: string[] | undefined;
+  if (kiroCommits !== undefined) {
+    try {
+      const found = await readTestOnlyCommits(
+        root,
+        kiroCommits.map((c) => c.sha),
+      );
+      if (found.length > 0) testOnlyCommits = found;
+    } catch {
+      testOnlyCommits = undefined;
+    }
   }
 
   for (const entry of walked.files) {
@@ -221,5 +235,6 @@ export async function indexRepo(root: string): Promise<CodeIndex> {
   );
   const result: CodeIndex = { root, files, diagnostics };
   if (kiroCommits !== undefined) result.kiroCommits = kiroCommits;
+  if (testOnlyCommits !== undefined) result.testOnlyCommits = testOnlyCommits;
   return result;
 }

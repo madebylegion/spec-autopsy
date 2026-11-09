@@ -10,9 +10,26 @@ const HEADING_RE = /^#{1,6}\s+Requirement\s+(\d+)/i;
 const CRITERION_RE = /^\s*(\d+)\.\s+(.*)$/;
 const FENCE_RE = /^\s*(?:```|~~~)/;
 const CLAUSE_START_RE = /^\s*(?:while|where|when|if)\s/i;
+const ANY_HEADING_RE = /^#{1,6}\s+\S/;
+const CURRENT_BEHAVIOR_RE = /current\s+behaviou?r/i;
+const FIXED_BEHAVIOR_RE = /(?:expected|unchanged)\s+behaviou?r/i;
 
 function compareCodeUnits(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/** True when a heading outside code fences names an expected or unchanged behavior. */
+function hasFixedBehaviorHeading(lines: string[]): boolean {
+  let inFence = false;
+  for (const line of lines) {
+    if (FENCE_RE.test(line)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
+    if (ANY_HEADING_RE.test(line) && FIXED_BEHAVIOR_RE.test(line)) return true;
+  }
+  return false;
 }
 
 const MESSAGES: Record<"missing-shall" | "missing-system" | "empty-response", string> = {
@@ -37,8 +54,10 @@ export function parseRequirementsText(text: string, options: ParseOptions): Pars
   try {
     const lines = String(text).split(/\r\n|\r|\n/);
     const seenIds = new Set<string>();
+    const bugfixFile = hasFixedBehaviorHeading(lines);
     let inFence = false;
     let requirementNumber: string | undefined;
+    let inDefectRequirement = false;
 
     lines.forEach((rawLine, index) => {
       const lineNo = index + 1;
@@ -52,6 +71,7 @@ export function parseRequirementsText(text: string, options: ParseOptions): Pars
       const heading = HEADING_RE.exec(rawLine);
       if (heading !== null) {
         requirementNumber = heading[1];
+        inDefectRequirement = bugfixFile && CURRENT_BEHAVIOR_RE.test(rawLine);
         return;
       }
 
@@ -70,7 +90,9 @@ export function parseRequirementsText(text: string, options: ParseOptions): Pars
           return;
         }
         seenIds.add(id);
-        requirements.push({ id, ...result.statement, file, line: lineNo });
+        const requirement: Requirement = { id, ...result.statement, file, line: lineNo };
+        if (inDefectRequirement) requirement.defectDescription = true;
+        requirements.push(requirement);
         return;
       }
 

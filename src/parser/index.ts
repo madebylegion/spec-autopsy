@@ -5,6 +5,8 @@ export { printRequirement } from "./requirement-printer.js";
 export { matchTaskCommitSubject } from "./task-commit-subject.js";
 export { parseTasksText, parseTasksProject } from "./tasks-reader.js";
 export type { TasksOptions } from "./tasks-reader.js";
+export { readDesignTexts } from "./design-reader.js";
+export { readCheckedTasks } from "./task-checks.js";
 export type {
   Diagnostic,
   DiagnosticCode,

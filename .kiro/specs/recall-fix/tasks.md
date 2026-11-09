@@ -2,7 +2,7 @@
 
 Each task is small enough for one call and ends with its own tests. Tests live in `tests/parser/`, `tests/indexer/`, `tests/linker/` and `tests/report/`; fixtures in `tests/fixtures/`. Run tests with `npx vitest --run` and type check with `npx tsc --noEmit`. No new dependencies. Never change THRESHOLD or any existing entry of an `expected.json`. Do not open or edit `tests/fixtures/heldout/` or `tests/fixtures/blind3/`. Do not edit the assertions of an existing test; if one fails because of the new behavior, name it in design.md and in the reply.
 
-- [ ] 1. Readers in the parser and the indexer
+- [x] 1. Readers in the parser and the indexer
   - In `src/parser/types.ts` add `defectDescription?: true` to `Requirement`. In `src/parser/requirement-parser.ts` set it on the requirements under a Requirement heading that matches `current behavior` when the file has an `expected behavior` or `unchanged behavior` heading outside code fences, following design.md; add the key to no other requirement.
   - Create `src/parser/design-reader.ts` (`readDesignTexts`) and `src/parser/task-checks.ts` (`readCheckedTasks`, keys `<spec>#<N>`), and export both from `src/parser/index.ts`. Both never throw. `TaskEntry` and `tasks-reader.ts` stay unchanged.
   - Add `testOnlyCommits?: string[]` to `CodeIndex` in `src/indexer/types.ts`, export `isTestPath` use from `walker.ts` as needed, add `readTestOnlyCommits(root, shas)` to `src/indexer/git-blame.ts` (one `git log --name-only` through `runGit`), and make `indexRepo` set the field only when `kiroCommits` is set and the result is not empty.
