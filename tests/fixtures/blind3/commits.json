@@ -1,0 +1,42 @@
+[
+  {
+    "message": "kiro: permit-issue task 1 Create applications and validate plates",
+    "files": [{ "path": "src/permits.ts", "lines": [[1, 31]] }]
+  },
+  {
+    "message": "kiro: permit-issue task 2 Fees and senior discount",
+    "files": [{ "path": "src/permits.ts", "lines": [[32, 41]] }]
+  },
+  {
+    "message": "kiro: permit-issue task 3 Active permit limit",
+    "files": [{ "path": "src/permits.ts", "lines": [[42, 48]] }, "tests/permits.test.ts"]
+  },
+  {
+    "message": "chore: lint",
+    "files": ["src/dates.ts"]
+  },
+  {
+    "message": "kiro: permit-renewal task 1 Renewal window and extension",
+    "files": [{ "path": "src/renewal.ts", "lines": [[1, 19]] }]
+  },
+  {
+    "message": "kiro: permit-renewal task 2 Grace period",
+    "files": [{ "path": "src/renewal.ts", "lines": [[20, 30]] }, "tests/renewal.test.ts"]
+  },
+  {
+    "message": "kiro: enforcement task 1 Plate lookup and citations",
+    "files": [{ "path": "src/enforcement.ts", "lines": [[1, 18]] }]
+  },
+  {
+    "message": "kiro: enforcement task 2 Fine amounts",
+    "files": ["src/fines.py", "tests/test_fines.py"]
+  },
+  {
+    "message": "fix: typo in comment",
+    "files": []
+  },
+  {
+    "message": "kiro: enforcement task 3 Fine escalation and payment",
+    "files": [{ "path": "src/enforcement.ts", "lines": [[19, 31]] }, "tests/enforcement.test.ts"]
+  }
+]

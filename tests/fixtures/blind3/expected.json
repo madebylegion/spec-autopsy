@@ -1,0 +1,13 @@
+[
+  { "class": "ghost", "key": "permit-issue/R3.2" },
+  { "class": "ghost", "key": "permit-renewal/R3.1" },
+  { "class": "ghost", "key": "enforcement/R2.2" },
+  { "class": "unproven", "key": "permit-issue/R2.2" },
+  { "class": "unproven", "key": "permit-renewal/R1.2" },
+  { "class": "unproven", "key": "permit-renewal/R2.2" },
+  { "class": "unproven", "key": "enforcement/R2.3" },
+  { "class": "zombie", "key": "src/permits.ts#permitToCsvRow" },
+  { "class": "zombie", "key": "src/renewal.ts#DEFAULT_LOCALE" },
+  { "class": "zombie", "key": "src/enforcement.ts#citationSummaryLine" },
+  { "class": "zombie", "key": "src/dates.ts#isWeekend" }
+]
