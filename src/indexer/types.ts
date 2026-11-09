@@ -26,6 +26,9 @@ export interface GitHistory {
   authors: string[];     // distinct, sorted
 }
 
+export interface KiroCommit { sha: string; subject: string }
+export interface BlameRange { startLine: number; endLine: number; sha: string }  // 1-based, inclusive
+
 export interface FileIndex {
   path: string;
   language: "typescript" | "tsx" | "javascript" | "python";
@@ -35,6 +38,7 @@ export interface FileIndex {
   comments: CommentEntry[];
   testCases: TestCase[];
   history: GitHistory;
+  blame?: BlameRange[];
 }
 
 export interface IndexDiagnostic { code: string; message: string; file: string }
@@ -43,4 +47,5 @@ export interface CodeIndex {
   root: string;
   files: FileIndex[];
   diagnostics: IndexDiagnostic[];
+  kiroCommits?: KiroCommit[];
 }

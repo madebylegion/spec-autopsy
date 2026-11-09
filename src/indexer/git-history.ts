@@ -1,28 +1,8 @@
-import { execFile } from "node:child_process";
+import { runGit } from "./run-git.js";
 import type { GitCommit, GitHistory } from "./types.js";
-
-const MAX_BUFFER = 64 * 1024 * 1024;
 
 function emptyHistory(): GitHistory {
   return { commits: [], commitCount: 0, authors: [] };
-}
-
-/** Runs git without a shell; resolves to stdout, or undefined on any failure. */
-function runGit(root: string, args: string[]): Promise<string | undefined> {
-  return new Promise((resolve) => {
-    try {
-      execFile(
-        "git",
-        args,
-        { cwd: root, maxBuffer: MAX_BUFFER, encoding: "utf8", windowsHide: true },
-        (error, stdout) => {
-          resolve(error ? undefined : stdout);
-        },
-      );
-    } catch {
-      resolve(undefined);
-    }
-  });
 }
 
 function compareCodeUnits(a: string, b: string): number {

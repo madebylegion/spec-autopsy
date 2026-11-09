@@ -2,28 +2,33 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Tree } from "web-tree-sitter";
 import { extractComments, extractTestCases } from "./comments.js";
+import { isShallow, readBlame, readKiroCommits } from "./git-blame.js";
 import { readGitHistory } from "./git-history.js";
 import { getParser, languageForExtension } from "./grammar-loader.js";
 import { extractPy } from "./py-extractor.js";
 import { extractTs } from "./ts-extractor.js";
 import type {
+  BlameRange,
   CodeIndex,
   CommentEntry,
   FileIndex,
   GitHistory,
   IndexDiagnostic,
+  KiroCommit,
   Symbol as CodeSymbol,
   TestCase,
 } from "./types.js";
 import { walkRepo } from "./walker.js";
 
 export type {
+  BlameRange,
   CodeIndex,
   CommentEntry,
   FileIndex,
   GitCommit,
   GitHistory,
   IndexDiagnostic,
+  KiroCommit,
   Symbol,
   SymbolKind,
   TestCase,
@@ -95,6 +100,17 @@ export async function indexRepo(root: string): Promise<CodeIndex> {
     };
   }
   diagnostics.push(...walked.diagnostics);
+
+  // Task commits: only in a full (not shallow) repository with a `kiro:` commit.
+  let kiroCommits: KiroCommit[] | undefined;
+  try {
+    if (!(await isShallow(root))) {
+      const found = await readKiroCommits(root);
+      if (found.length > 0) kiroCommits = found;
+    }
+  } catch {
+    kiroCommits = undefined;
+  }
 
   for (const entry of walked.files) {
     const language = languageForExtension(extensionOf(entry.path));
@@ -172,7 +188,17 @@ export async function indexRepo(root: string): Promise<CodeIndex> {
       history = emptyHistory();
     }
 
-    files.push({
+    let blame: BlameRange[] | undefined;
+    if (kiroCommits !== undefined) {
+      try {
+        const ranges = await readBlame(root, entry.path);
+        if (ranges !== undefined && ranges.length > 0) blame = ranges;
+      } catch {
+        blame = undefined;
+      }
+    }
+
+    const file: FileIndex = {
       path: entry.path,
       language,
       isTest: entry.isTest,
@@ -181,7 +207,9 @@ export async function indexRepo(root: string): Promise<CodeIndex> {
       comments,
       testCases,
       history,
-    });
+    };
+    if (blame !== undefined) file.blame = blame;
+    files.push(file);
   }
 
   files.sort((a, b) => compareCodeUnits(a.path, b.path));
@@ -191,5 +219,7 @@ export async function indexRepo(root: string): Promise<CodeIndex> {
       compareCodeUnits(a.code, b.code) ||
       compareCodeUnits(a.message, b.message),
   );
-  return { root, files, diagnostics };
+  const result: CodeIndex = { root, files, diagnostics };
+  if (kiroCommits !== undefined) result.kiroCommits = kiroCommits;
+  return result;
 }
