@@ -1,0 +1,12 @@
+[
+  { "class": "ghost", "key": "lending/R2.2" },
+  { "class": "ghost", "key": "lending/R2.3" },
+  { "class": "ghost", "key": "holds/R1.5" },
+  { "class": "unproven", "key": "lending/R1.3" },
+  { "class": "unproven", "key": "holds/R1.3" },
+  { "class": "unproven", "key": "holds/R1.4" },
+  { "class": "zombie", "key": "src/catalog-utils.ts#formatIsbn" },
+  { "class": "zombie", "key": "src/catalog-utils.ts#DEFAULT_LOCALE" },
+  { "class": "zombie", "key": "src/holds.py#export_queue_csv" },
+  { "class": "zombie", "key": "src/holds.py#debug_dump" }
+]
