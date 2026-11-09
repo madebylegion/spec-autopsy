@@ -8,7 +8,7 @@ Each task is small enough for one call. Tests live in `tests/indexer/`; fixtures
   - Add `tests/indexer/grammar-loader.test.ts`: load typescript, tsx, javascript and python, parse a one-line snippet each and check `rootNode.hasError` is false; check the same Parser instance is returned on a second call; check the extension mapping.
   - _Requirements: indexer/R2.1, indexer/R2.2, indexer/R2.3, indexer/R2.4, indexer/R2.7, indexer/R2.9_
 
-- [ ] 2. TypeScript and JavaScript symbol extractor
+- [x] 2. TypeScript and JavaScript symbol extractor
   - Create `src/indexer/ts-extractor.ts` following design.md.
   - Create fixture `tests/fixtures/ts-basic/` (plain files): `src/math.ts` with exported and non-exported functions, an arrow-function const, a plain const, an interface, a type alias, an enum, a class with methods, and an `export { a }` list; no `.git`.
   - Add `tests/indexer/ts-extractor.test.ts` with example tests: kinds, `Class.method` names, `export`, `export default`, export lists, re-exports adding no symbols, and exact 1-based start and end lines.
