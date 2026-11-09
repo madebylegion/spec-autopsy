@@ -23,7 +23,7 @@ Each task is small enough for one call and ends with its own tests. Tests live i
   - After this task the orchestrator runs `npm run ui:build` and takes screenshots; the page must work from `dist/ui` with a `report.json` beside it.
   - _Requirements: report-and-morgue/R4.5, report-and-morgue/R6.1, report-and-morgue/R6.2, report-and-morgue/R6.3, report-and-morgue/R6.4, report-and-morgue/R6.5, report-and-morgue/R6.6, report-and-morgue/R6.7, report-and-morgue/R6.8, report-and-morgue/R7.1, report-and-morgue/R7.2, report-and-morgue/R7.3, report-and-morgue/R7.5, report-and-morgue/R7.6, report-and-morgue/R9.1, report-and-morgue/R9.2, report-and-morgue/R9.5, report-and-morgue/R9.6, report-and-morgue/R12.1, report-and-morgue/R12.3, report-and-morgue/R12.5_
 
-- [ ] 4. Body map SVG, keyboard markers, filters and detail panel
+- [x] 4. Body map SVG, keyboard markers, filters and detail panel
   - Create `src/ui/body-map.ts`: the SVG silhouette on a slab (front view), seven regions, requirement markers in a grid per region (ghost open ring, unproven dashed ring, proven filled dot), the "extra limb" strip with one marker per zombie. Every marker is a `button` (or an HTML button over the SVG) with an accessible name `<id>, <status>`, visible focus, and a hit area of at least 44 px.
   - Finish `groupByRegion` and `regionForSpec` (1 head, 2 chest, 3 abdomen, 4 left arm, 5 right arm, 6 left leg, 7 right leg; 8 and more share the right leg; fewer than 7 use the first regions).
   - Add the filter toggles (Ghosts, Zombies, Unproven with counts and `aria-pressed`, "Low confidence"), the detail panel in the page (all evidence sentences, links with method, commit SHA, last commit), opening from a marker or a card with scroll into view, Escape and a close button to close.

@@ -2,7 +2,7 @@ import "./style.css";
 import { validateReport } from "../report/validate-report.js";
 import { renderPage } from "./render.js";
 import { stateFromLoad } from "./view-model.js";
-import type { LoadResult, PageState } from "./view-model.js";
+import type { Filters, LoadResult, PageState } from "./view-model.js";
 
 const root = document.getElementById("app");
 if (root === null) throw new Error("Missing #app element");
@@ -10,9 +10,56 @@ const app: HTMLElement = root;
 
 let current: PageState = { kind: "loading" };
 let banner: string[] | null = null;
+let filters: Filters = { ghost: true, zombie: true, unproven: true, lowOnly: false };
+let selectedKey: string | null = null;
+/** The focus id of the control that opened the panel, so Close can return there. */
+let openerId: string | null = null;
+
+function focusId(): string | null {
+  const active = document.activeElement;
+  return active instanceof HTMLElement ? (active.dataset["focusId"] ?? null) : null;
+}
+
+function focusById(id: string): boolean {
+  for (const node of Array.from(app.querySelectorAll<HTMLElement>("[data-focus-id]"))) {
+    if (node.dataset["focusId"] === id) {
+      node.focus({ preventScroll: true });
+      return true;
+    }
+  }
+  return false;
+}
 
 function show(): void {
-  renderPage(app, current, { banner, onFile: (file) => void openFile(file) });
+  renderPage(app, current, {
+    banner,
+    onFile: (file) => void openFile(file),
+    filters,
+    selectedKey,
+    onFilters: (next) => {
+      const id = focusId();
+      filters = next;
+      show();
+      if (id !== null) focusById(id);
+    },
+    onSelect: (key) => {
+      openerId = focusId();
+      selectedKey = key;
+      show();
+      focusById("detail");
+      const panel = app.querySelector<HTMLElement>(".detail");
+      if (panel !== null) panel.scrollIntoView({ block: "nearest" });
+    },
+    onClose: close,
+  });
+}
+
+function close(): void {
+  if (selectedKey === null) return;
+  selectedKey = null;
+  show();
+  if (openerId !== null) focusById(openerId);
+  openerId = null;
 }
 
 function validatedFrom(text: string): LoadResult {
@@ -36,6 +83,7 @@ async function loadInitial(): Promise<void> {
   }
   current = stateFromLoad(result);
   banner = null;
+  selectedKey = null;
   show();
 }
 
@@ -54,6 +102,8 @@ async function openFile(file: File): Promise<void> {
   } else {
     current = next;
     banner = null;
+    selectedKey = null;
+    openerId = null;
   }
   show();
 }
@@ -65,6 +115,12 @@ document.addEventListener("drop", (event) => {
   event.preventDefault();
   const file = event.dataTransfer?.files[0];
   if (file !== undefined) void openFile(file);
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && selectedKey !== null) {
+    event.preventDefault();
+    close();
+  }
 });
 
 show();

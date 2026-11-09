@@ -4,7 +4,7 @@
   --slab-raised: #262a2e;
   --slab-line: #6f767d;
   --bone: #ebe7da;
-  --bone-dim: #b4b1a6;
+  --bone-dim: #b4b1a6; /* on --slab-raised about 6.7:1, used for all metadata text */
   --ghost-ink: #9cc3e8;
   --zombie-ink: #a2d28c;
   --unproven-ink: #e2b552;
@@ -98,14 +98,19 @@ body {
   color: var(--unproven-ink);
 }
 
+/* The label is the button; the native file input is hidden but stays focusable. */
 .open-report {
+  position: relative;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-height: var(--tap);
-  padding: 0 12px;
+  padding: 0 20px;
   margin-left: auto;
-  border: 1px solid var(--slab-line);
+  border: 1px solid var(--bone-dim);
   background: var(--slab-raised);
+  color: var(--bone);
+  font-size: 0.9375rem;
   cursor: pointer;
 }
 
@@ -115,11 +120,15 @@ body {
 }
 
 .open-report-input {
-  max-width: 14rem;
-  margin-left: 8px;
-  color: var(--bone-dim);
-  font: inherit;
-  font-size: 0.8125rem;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  border: 0;
+  white-space: nowrap;
 }
 
 .page {
@@ -159,6 +168,191 @@ body {
   font-size: 1.25rem;
 }
 
+/* Filters */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.toggle {
+  min-height: var(--tap);
+  padding: 0 16px;
+  border: 1px solid var(--bone-dim);
+  background: var(--slab-raised);
+  color: var(--bone);
+  font: inherit;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.toggle[aria-pressed="true"] {
+  border-color: var(--bone);
+  background: var(--bone);
+  color: var(--tag-ink);
+}
+
+/* Body map */
+.map-section {
+  margin: 0 0 24px;
+}
+
+.map-figure {
+  margin: 0;
+}
+
+.map {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto;
+  aspect-ratio: 300 / 700;
+  container-type: inline-size;
+}
+
+.map svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.map-slab {
+  fill: var(--slab-raised);
+}
+
+.map-body {
+  fill: none;
+  stroke: var(--slab-line);
+  stroke-width: 2;
+}
+
+.map-strip {
+  fill: none;
+  stroke: var(--slab-line);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+
+.map-caption {
+  max-width: 340px;
+  margin: 8px auto 0;
+  color: var(--bone-dim);
+  font-size: 0.8125rem;
+}
+
+/* The button is the 44 px hit area; the dot inside is the visible marker. */
+.marker {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+
+.marker-dot {
+  display: block;
+  box-sizing: border-box;
+  width: max(10px, calc(var(--dot-units) * 100cqw / 300));
+  height: max(10px, calc(var(--dot-units) * 100cqw / 300));
+  border-radius: 50%;
+}
+
+.marker--ghost .marker-dot {
+  border: 2px solid var(--ghost-ink);
+}
+
+.marker--unproven .marker-dot {
+  border: 2px dashed var(--unproven-ink);
+}
+
+.marker--proven .marker-dot {
+  background: var(--bone-dim);
+}
+
+.marker--zombie .marker-dot {
+  background: var(--zombie-ink);
+  border-radius: 2px;
+}
+
+.marker--selected .marker-dot {
+  outline: 2px solid var(--bone);
+  outline-offset: 3px;
+}
+
+/* Detail panel */
+.detail {
+  margin: 0 0 24px;
+  padding: 16px;
+  border: 1px solid var(--bone);
+  background: var(--slab-raised);
+}
+
+.detail-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.detail-heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+}
+
+.detail-top .tag-type {
+  margin-left: 0;
+}
+
+.detail-close {
+  margin-left: auto;
+}
+
+.detail-text {
+  margin: 12px 0;
+  white-space: pre-wrap;
+}
+
+.detail-block {
+  margin: 16px 0 0;
+}
+
+.detail-subtitle {
+  margin: 0 0 4px;
+  color: var(--bone-dim);
+  font-size: 0.75rem;
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.detail-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.detail-item {
+  margin: 4px 0;
+  font-size: 0.875rem;
+}
+
+.detail-none {
+  margin: 0;
+  color: var(--bone-dim);
+  font-size: 0.875rem;
+}
+
+/* Toe tags */
 .tags {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
@@ -172,24 +366,17 @@ body {
   min-width: 0;
 }
 
+/* Every card has the same neutral border; the type colour is on the type label only. */
 .tag {
   height: 100%;
   padding: 12px 16px;
   border: 1px solid var(--slab-line);
-  border-left-width: 6px;
   background: var(--slab-raised);
 }
 
-.tag--ghost {
-  border-left-color: var(--ghost-ink);
-}
-
-.tag--zombie {
-  border-left-color: var(--zombie-ink);
-}
-
-.tag--unproven {
-  border-left-color: var(--unproven-ink);
+.tag--selected {
+  border-color: var(--bone);
+  box-shadow: inset 0 0 0 2px var(--bone);
 }
 
 .tag-top {
@@ -213,44 +400,113 @@ body {
 
 .tag-type {
   margin-left: auto;
+  padding: 0 8px;
+  border: 1px solid currentColor;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
-.tag--ghost .tag-type {
+.tag--ghost .tag-type,
+.tag-type--ghost {
   color: var(--ghost-ink);
 }
 
-.tag--zombie .tag-type {
+.tag--zombie .tag-type,
+.tag-type--zombie {
   color: var(--zombie-ink);
 }
 
-.tag--unproven .tag-type {
+.tag--unproven .tag-type,
+.tag-type--unproven {
   color: var(--unproven-ink);
 }
 
-.tag-title {
-  margin: 8px 0;
-}
-
-.tag-where,
-.tag-confidence {
-  margin: 2px 0;
+.tag-type--proven {
   color: var(--bone-dim);
-  font-size: 0.875rem;
 }
 
-.tag-cause {
+.tag-title {
   margin: 8px 0 0;
-  font-size: 0.875rem;
 }
 
-.tag-cause-label {
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--bone);
+  font: inherit;
+  font-size: 0.9375rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Metadata: one row per fact, a small label above each value, all at 4.5:1 or better. */
+.tag-meta {
+  display: grid;
+  gap: 10px;
+  margin: 8px 0 0;
+}
+
+.meta-row {
+  display: grid;
+  gap: 2px;
+}
+
+.meta-label {
   color: var(--bone-dim);
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+
+.meta-value {
+  margin: 0;
+  color: var(--bone);
+  font-size: 0.875rem;
+}
+
+/* Paths break only after a "/"; the line number stays with the last part. */
+.path {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.path-seg {
+  white-space: nowrap;
+}
+
+.path-tail {
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .bigs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+
+  .big {
+    align-items: center;
+    text-align: center;
+  }
+
+  .open-report {
+    width: 100%;
+    margin-left: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

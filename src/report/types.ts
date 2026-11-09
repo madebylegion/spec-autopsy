@@ -64,7 +64,7 @@ export interface Finding {
 export interface Report {
   schemaVersion: 1;
   tool: { name: "spec-autopsy"; version: string };
-  /** Base name of the body map root, never a path. */
+  /** The package.json name when there is one, else the base name of the root; never a path. */
   project: { name: string };
   summary: ReportSummary;
   specs: ReportSpec[];
@@ -74,6 +74,8 @@ export interface Report {
 
 export interface ReportOptions {
   version: string;
+  /** Project name (the `name` of package.json); default is the base name of the root. */
+  projectName?: string;
 }
 
 export type ValidateResult = { ok: true; report: Report } | { ok: false; errors: string[] };

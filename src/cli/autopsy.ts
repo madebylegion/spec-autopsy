@@ -106,6 +106,17 @@ async function readToolVersion(): Promise<string> {
   return typeof version === "string" ? version : "0.0.0";
 }
 
+/** The `name` in `<root>/package.json`, or undefined when absent, unreadable or empty. */
+export async function readProjectName(root: string): Promise<string | undefined> {
+  try {
+    const parsed: unknown = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
+    const name = (parsed as { name?: unknown } | null)?.name;
+    return typeof name === "string" && name.trim() !== "" ? name.trim() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Runs the autopsy on `root`, writes `.autopsy/last.json` and the report
  * (`.autopsy/report.json`, or `options.jsonPath`), and returns the
@@ -125,7 +136,12 @@ export async function runAutopsy(root: string, options: AutopsyOptions = {}): Pr
   await writeFile(summaryPath, `${JSON.stringify(current, null, 2)}\n`, "utf8");
 
   const version = options.version ?? (await readToolVersion());
-  const report = buildReport(map, texts, { version });
+  const projectName = await readProjectName(absRoot);
+  const report = buildReport(
+    map,
+    texts,
+    projectName === undefined ? { version } : { version, projectName },
+  );
   const reportPath =
     options.jsonPath !== undefined
       ? resolve(options.jsonPath)

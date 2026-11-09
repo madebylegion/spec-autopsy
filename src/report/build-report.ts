@@ -21,6 +21,11 @@ function baseName(root: string): string {
   return parts.length === 0 ? "" : (parts[parts.length - 1] ?? "");
 }
 
+function projectNameOf(map: BodyMap, options: ReportOptions): string {
+  const given = options.projectName?.trim() ?? "";
+  return given !== "" ? given : baseName(map.root);
+}
+
 function atLeastOne(line: number): number {
   return Number.isFinite(line) && line >= 1 ? Math.trunc(line) : 1;
 }
@@ -122,7 +127,7 @@ export function buildReport(
   return {
     schemaVersion: 1,
     tool: { name: "spec-autopsy", version: options.version },
-    project: { name: baseName(map.root) },
+    project: { name: projectNameOf(map, options) },
     summary: {
       requirements: map.requirements.length,
       ghost,

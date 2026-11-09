@@ -1,5 +1,12 @@
 // Pure functions only: no DOM, no node: imports. Tested without a DOM.
-import type { Finding, FindingType, Report, ValidateResult } from "../report/types.js";
+import type {
+  ConfidenceLevel,
+  Finding,
+  FindingType,
+  Report,
+  ReportRequirement,
+  ValidateResult,
+} from "../report/types.js";
 
 export type Region =
   | "head"
@@ -113,6 +120,23 @@ export function cardText(f: Finding): CardText {
   };
 }
 
+/**
+ * Splits a path so that a line break is only allowed after a "/":
+ * "a/b/c.ts" gives ["a/", "b/", "c.ts"]. Joining the parts gives the path back.
+ */
+export function pathParts(file: string): string[] {
+  const parts: string[] = [];
+  let start = 0;
+  for (let i = 0; i < file.length; i++) {
+    if (file.charAt(i) === "/") {
+      parts.push(file.slice(start, i + 1));
+      start = i + 1;
+    }
+  }
+  if (start < file.length) parts.push(file.slice(start));
+  return parts;
+}
+
 export interface RegionGroup {
   region: Region;
   /** Spec names in this region, in report order. */
@@ -135,6 +159,256 @@ export function groupByRegion(report: Report): RegionGroup[] {
     for (const req of spec.requirements) group.requirementIds.push(req.id);
   });
   return groups;
+}
+
+// ---------------------------------------------------------------------------
+// Body map geometry and markers
+// ---------------------------------------------------------------------------
+
+export type MapRegion = Region | "extra-limb";
+
+export interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+/** Size of the SVG drawing, in drawing units. */
+export const MAP_WIDTH = 300;
+export const MAP_HEIGHT = 700;
+
+/** Where the markers of each region go. The "extra limb" strip is for zombies. */
+export const REGION_BOXES: Readonly<Record<MapRegion, Box>> = {
+  head: { x: 110, y: 22, w: 80, h: 76 },
+  chest: { x: 98, y: 112, w: 104, h: 112 },
+  abdomen: { x: 102, y: 232, w: 96, h: 100 },
+  "left-arm": { x: 36, y: 122, w: 52, h: 230 },
+  "right-arm": { x: 212, y: 122, w: 52, h: 230 },
+  "left-leg": { x: 102, y: 344, w: 44, h: 250 },
+  "right-leg": { x: 154, y: 344, w: 44, h: 250 },
+  "extra-limb": { x: 20, y: 616, w: 260, h: 70 },
+};
+
+export interface Grid {
+  /** Side of one square cell. */
+  cell: number;
+  /** Cell centres in reading order; every cell lies inside the box. */
+  points: Point[];
+}
+
+/**
+ * Places `count` markers in a grid inside `box`. Picks the number of columns
+ * that gives the biggest square cell, then centres the grid in the box.
+ */
+export function gridPositions(count: number, box: Box): Grid {
+  const n = Number.isFinite(count) ? Math.max(0, Math.trunc(count)) : 0;
+  if (n === 0) return { cell: 0, points: [] };
+  let bestCols = 1;
+  let bestCell = 0;
+  for (let cols = 1; cols <= n; cols++) {
+    const rows = Math.ceil(n / cols);
+    const cell = Math.min(box.w / cols, box.h / rows);
+    if (cell > bestCell) {
+      bestCell = cell;
+      bestCols = cols;
+    }
+  }
+  const rows = Math.ceil(n / bestCols);
+  const left = box.x + (box.w - bestCols * bestCell) / 2;
+  const top = box.y + (box.h - rows * bestCell) / 2;
+  const points: Point[] = [];
+  for (let i = 0; i < n; i++) {
+    points.push({
+      x: left + ((i % bestCols) + 0.5) * bestCell,
+      y: top + (Math.floor(i / bestCols) + 0.5) * bestCell,
+    });
+  }
+  return { cell: bestCell, points };
+}
+
+export type MarkerStatus = "ghost" | "unproven" | "proven" | "zombie";
+
+export interface MapMarker {
+  /** Unique key; a requirement id, or `zombie:<index in report.findings>`. */
+  key: string;
+  /** The requirement id, or the zombie symbol. */
+  id: string;
+  status: MarkerStatus;
+  region: MapRegion;
+  /** Centre in drawing units. */
+  x: number;
+  y: number;
+  /** Side of the grid cell in drawing units. */
+  cell: number;
+  /** Accessible name. */
+  name: string;
+  /** Confidence level of the finding, or null for a proven requirement. */
+  level: ConfidenceLevel | null;
+}
+
+export function markerName(id: string, status: MarkerStatus): string {
+  return `${id}, ${status}`;
+}
+
+/** Key of each finding: its requirement id, or `zombie:<index>` for a zombie. */
+export function findingKeys(report: Report): Map<Finding, string> {
+  const keys = new Map<Finding, string>();
+  report.findings.forEach((finding, index) => {
+    keys.set(finding, finding.requirementId ?? `zombie:${index}`);
+  });
+  return keys;
+}
+
+/**
+ * One marker per requirement (grouped by region, in report order) and one per
+ * zombie (in the extra limb strip). Positions do not depend on any filter.
+ */
+export function buildMarkers(report: Report): MapMarker[] {
+  const markers: MapMarker[] = [];
+  const byId = new Map<string, ReportRequirement>();
+  for (const spec of report.specs) for (const req of spec.requirements) byId.set(req.id, req);
+  const levelById = new Map<string, ConfidenceLevel>();
+  for (const finding of report.findings) {
+    if (finding.requirementId !== null) levelById.set(finding.requirementId, finding.confidence.level);
+  }
+
+  for (const group of groupByRegion(report)) {
+    const grid = gridPositions(group.requirementIds.length, REGION_BOXES[group.region]);
+    group.requirementIds.forEach((id, i) => {
+      const req = byId.get(id);
+      const point = grid.points[i];
+      if (req === undefined || point === undefined) return;
+      markers.push({
+        key: id,
+        id,
+        status: req.status,
+        region: group.region,
+        x: point.x,
+        y: point.y,
+        cell: grid.cell,
+        name: markerName(id, req.status),
+        level: levelById.get(id) ?? null,
+      });
+    });
+  }
+
+  const zombies: { finding: Finding; index: number }[] = [];
+  report.findings.forEach((finding, index) => {
+    if (finding.type === "zombie") zombies.push({ finding, index });
+  });
+  const grid = gridPositions(zombies.length, REGION_BOXES["extra-limb"]);
+  zombies.forEach(({ finding, index }, i) => {
+    const point = grid.points[i];
+    if (point === undefined) return;
+    markers.push({
+      key: `zombie:${index}`,
+      id: finding.title,
+      status: "zombie",
+      region: "extra-limb",
+      x: point.x,
+      y: point.y,
+      cell: grid.cell,
+      name: markerName(finding.title, "zombie"),
+      level: finding.confidence.level,
+    });
+  });
+  return markers;
+}
+
+/** Whether a marker is drawn under the current filters. Proven ones are hidden by "Low confidence" only. */
+export function markerVisible(marker: MapMarker, f: Filters): boolean {
+  if (marker.status === "proven") return !f.lowOnly;
+  if (!f[marker.status]) return false;
+  if (f.lowOnly && marker.level !== "low") return false;
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// Detail panel
+// ---------------------------------------------------------------------------
+
+export interface Detail {
+  key: string;
+  kind: "requirement" | "zombie";
+  /** Requirement id, or zombie symbol. */
+  heading: string;
+  status: MarkerStatus;
+  spec: string | null;
+  /** Full requirement text, or the zombie symbol. */
+  text: string;
+  file: string;
+  line: number;
+  /** For example "high 0.90"; null for a proven requirement. */
+  confidence: string | null;
+  evidence: string[];
+  codeLinks: string[];
+  testLinks: string[];
+  lastCommit: string | null;
+}
+
+function viaText(method: string, score: number, commit: string | undefined): string {
+  const sha = commit === undefined ? "" : `, commit ${commit.slice(0, 7)}`;
+  return `${method}${sha}, score ${score.toFixed(2)}`;
+}
+
+/** Everything the detail panel shows for a marker or card key, or null if the key is unknown. */
+export function detailFor(report: Report, key: string): Detail | null {
+  for (const spec of report.specs) {
+    for (const req of spec.requirements) {
+      if (req.id !== key) continue;
+      const finding = report.findings.find((f) => f.requirementId === key);
+      return {
+        key,
+        kind: "requirement",
+        heading: req.id,
+        status: req.status,
+        spec: spec.name,
+        text: req.text !== "" ? req.text : (finding?.title ?? req.id),
+        file: req.file,
+        line: req.line,
+        confidence:
+          finding === undefined
+            ? null
+            : `${finding.confidence.level} ${finding.confidence.score.toFixed(2)}`,
+        evidence: finding === undefined ? [] : [...finding.evidence],
+        codeLinks: req.codeLinks.map(
+          (l) => `${l.file}:${l.startLine} ${l.symbol} (${viaText(l.method, l.score, l.commit)})`,
+        ),
+        testLinks: req.testLinks.map(
+          (l) => `${l.file}:${l.line} ${l.title} (${viaText(l.method, l.score, l.commit)})`,
+        ),
+        lastCommit:
+          req.lastCommit === null
+            ? null
+            : `${req.lastCommit.subject} (${req.lastCommit.author}, ${req.lastCommit.date})`,
+      };
+    }
+  }
+  const match = /^zombie:(\d+)$/.exec(key);
+  if (match === null) return null;
+  const finding = report.findings[Number(match[1])];
+  if (finding === undefined || finding.type !== "zombie") return null;
+  return {
+    key,
+    kind: "zombie",
+    heading: finding.title,
+    status: "zombie",
+    spec: null,
+    text: finding.title,
+    file: finding.file,
+    line: finding.line,
+    confidence: `${finding.confidence.level} ${finding.confidence.score.toFixed(2)}`,
+    evidence: [...finding.evidence],
+    codeLinks: [],
+    testLinks: [],
+    lastCommit: null,
+  };
 }
 
 export type PageState =
