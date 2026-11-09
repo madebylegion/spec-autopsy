@@ -14,7 +14,7 @@ Each task is small enough for one call. Tests live in `tests/parser/`. Run tests
   - Add `tests/parser/statement-parser.test.ts` with example-based tests: each of the five patterns, a complex form, upper, lower and mixed case keywords, the Kiro form `WHEN ... THEN the system SHALL ...`, and whitespace collapsing.
   - _Requirements: ears-parser/R2.1, ears-parser/R2.2, ears-parser/R2.3, ears-parser/R2.4, ears-parser/R2.5, ears-parser/R2.6, ears-parser/R2.7, ears-parser/R2.8, ears-parser/R3.1, ears-parser/R3.2, ears-parser/R3.4_
 
-- [ ] 3. Stable ID assignment and diagnostics
+- [x] 3. Stable ID assignment and diagnostics
   - Create `src/parser/requirement-parser.ts` with `parseRequirementsText`: heading and numbered-criterion scan, fenced code skipping, ID `<spec>/R<N>.<M>`, 1-based line and file on each object, duplicate-id handling, and the diagnostics `missing-shall`, `missing-system`, `empty-response` and `unnumbered-statement`.
   - Guard the whole scan so it never throws.
   - Add `tests/parser/requirement-parser.test.ts` with example tests: IDs from a sample file, ID unchanged after editing a statement's text, duplicates, each diagnostic with file and line, and empty input.
