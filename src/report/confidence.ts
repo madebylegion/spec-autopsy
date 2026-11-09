@@ -25,9 +25,13 @@ export function specOf(id: string): string {
   return slash < 0 ? id : id.slice(0, slash);
 }
 
-/** Ghost: near miss gives low; a commit link in the same spec gives high; else medium. */
+/**
+ * Ghost: near miss gives low; a contradiction (a checked task with a resolved
+ * commit lists it) gives low; a commit link in the same spec gives high; else medium.
+ */
 export function ghostConfidence(entry: RequirementEntry, map: BodyMap): Confidence {
   if (entry.nearMiss !== undefined) return make("low");
+  if (entry.contradiction !== undefined) return make("low");
   const spec = specOf(entry.id);
   const commitInSpec = map.requirements.some(
     (r) => specOf(r.id) === spec && r.codeLinks.some((l) => l.method === "commit"),

@@ -16,6 +16,14 @@ export function ghostEvidence(entry: RequirementEntry): string[] {
   if (near !== undefined && near.symbol !== null) {
     out.push(`closest name: ${near.file}#${near.symbol} shares words (score ${score2(near.score)})`);
   }
+  const doubt = entry.contradiction;
+  if (doubt !== undefined) {
+    const slash = entry.id.indexOf("/");
+    const spec = slash < 0 ? entry.id : entry.id.slice(0, slash);
+    out.push(
+      `task ${doubt.task} of ${spec} is checked [x] and its commit ${sha7(doubt.commit)} is resolved, yet nothing links to ${entry.id}`,
+    );
+  }
   return out;
 }
 
