@@ -8,7 +8,7 @@ Each task is small enough for one call and ends with its own tests. Tests live i
   - Add `tests/linker/tags.test.ts` with example tests built from hand-written `FileIndex` objects: tag inside a symbol range; innermost symbol (method inside class); JSDoc right above a declaration; tag more than 3 lines above attaches to nothing; multi-line block comment line arithmetic; case sensitivity and the left boundary (`Xlinker/R1.1` is not a tag); test-file comment on the same line and 3 lines before a test case; title tag; no cross-attachment between test and non-test files; unknown ids are returned as hits and left to `link` for diagnostics.
   - _Requirements: linker/R1.3, linker/R2.1, linker/R2.2, linker/R2.3, linker/R2.4, linker/R2.5, linker/R2.6, linker/R2.7, linker/R2.9_
 
-- [ ] 2. Tokeniser, overlap score, THRESHOLD and their properties
+- [x] 2. Tokeniser, overlap score, THRESHOLD and their properties
   - Create `src/linker/overlap.ts`: `THRESHOLD = 0.5`, `STOPWORDS`, `tokenise`, `requirementTokens`, `symbolTokens`, `sharedCount`, `overlapScore`, `overlaps` exactly as in design.md, with the formula in a comment.
   - Add `tests/linker/overlap.test.ts`: examples for camelCase, snake_case, `Class.method`, stopwords, short tokens, trailing `s` (including `ss` and `ands`), duplicates, empty input, `THRESHOLD === 0.5`, the 2-shared-token minimum (1 shared of 1 is not a link), score 0.4 below and 0.5 at the threshold.
   - Add properties with fast-check in the same file: `tokenise` never throws and `tokenise(tokenise(s).join(" "))` equals `tokenise(s)`; `overlapScore` is within 0..1 and `overlapScore(a, b) === overlapScore(b, a)`.
