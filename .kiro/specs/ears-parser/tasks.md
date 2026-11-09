@@ -20,7 +20,7 @@ Each task is small enough for one call. Tests live in `tests/parser/`. Run tests
   - Add `tests/parser/requirement-parser.test.ts` with example tests: IDs from a sample file, ID unchanged after editing a statement's text, duplicates, each diagnostic with file and line, and empty input.
   - _Requirements: ears-parser/R3.3, ears-parser/R4.1, ears-parser/R4.2, ears-parser/R4.3, ears-parser/R4.4, ears-parser/R4.5, ears-parser/R5.1, ears-parser/R5.2, ears-parser/R5.3, ears-parser/R5.4, ears-parser/R5.5, ears-parser/R5.6_
 
-- [ ] 4. Printer and property-based tests
+- [x] 4. Printer and property-based tests
   - Create `src/parser/requirement-printer.ts` (`printRequirement`) with the canonical form from design.md, and `src/parser/index.ts` exports.
   - Add `tests/parser/requirement-printer.test.ts` with example tests for each pattern.
   - Add `tests/parser/requirement-properties.test.ts` using fast-check: (a) round trip, parse then print then parse gives an equal object apart from id, file and line, using generated fields that avoid keywords, "the", commas and line breaks; (b) ID stability when unrelated prose lines are inserted or shuffled between statements; (c) `parseRequirementsText` never throws on arbitrary strings, and every diagnostic has a code, a message, a file and a line of at least 1.

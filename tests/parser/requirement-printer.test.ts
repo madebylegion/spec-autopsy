@@ -1,0 +1,53 @@
+import { describe, expect, it } from "vitest";
+import { printRequirement } from "../../src/parser/requirement-printer.js";
+import type { Requirement } from "../../src/parser/types.js";
+
+function req(partial: Partial<Requirement>): Requirement {
+  return {
+    id: "demo/R1.1",
+    pattern: "ubiquitous",
+    system: "parser",
+    response: "parse files",
+    file: "a.md",
+    line: 1,
+    ...partial,
+  };
+}
+
+describe("printRequirement", () => {
+  it("prints a ubiquitous requirement", () => {
+    expect(printRequirement(req({}))).toBe("The parser SHALL parse files");
+  });
+
+  it("prints an event-driven requirement", () => {
+    expect(printRequirement(req({ pattern: "event-driven", trigger: "a file changes" }))).toBe(
+      "WHEN a file changes, THEN the parser SHALL parse files",
+    );
+  });
+
+  it("prints a state-driven requirement", () => {
+    expect(printRequirement(req({ pattern: "state-driven", state: "idle" }))).toBe(
+      "WHILE idle, THEN the parser SHALL parse files",
+    );
+  });
+
+  it("prints an unwanted-behaviour requirement", () => {
+    expect(printRequirement(req({ pattern: "unwanted", condition: "input is empty" }))).toBe(
+      "IF input is empty, THEN the parser SHALL parse files",
+    );
+  });
+
+  it("prints an optional-feature requirement", () => {
+    expect(printRequirement(req({ pattern: "optional", feature: "git is present" }))).toBe(
+      "WHERE git is present, THEN the parser SHALL parse files",
+    );
+  });
+
+  it("prints a complex requirement with clauses in canonical order", () => {
+    expect(
+      printRequirement(
+        req({ pattern: "complex", condition: "bad", trigger: "run", state: "busy", feature: "extra" }),
+      ),
+    ).toBe("WHILE busy, WHERE extra, WHEN run, IF bad, THEN the parser SHALL parse files");
+  });
+});
