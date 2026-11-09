@@ -21,10 +21,10 @@ function loadServer(): ServerEntry {
 }
 
 describe(".kiro/settings/mcp.json", () => {
-  it("registers the spec-autopsy server with the local tsx binary", () => {
+  it("registers the spec-autopsy server through the launch script", () => {
     const server = loadServer();
-    expect(server.command).toBe("node_modules/.bin/tsx");
-    expect(server.args).toEqual(["src/mcp/server.ts"]);
+    expect(server.command).toBe("sh");
+    expect(server.args).toEqual(["src/mcp/launch.sh"]);
   });
 
   it("auto-approves exactly the three read-only tools", () => {

@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "spec-autopsy": {
-      "command": "node_modules/.bin/tsx",
-      "args": ["src/mcp/server.ts"],
+      "command": "sh",
+      "args": ["src/mcp/launch.sh"],
       "autoApprove": ["list_ghosts", "list_findings", "explain"]
     }
   }
