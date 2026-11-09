@@ -14,7 +14,7 @@ Each task is small enough for one call. Tests live in `tests/indexer/`; fixtures
   - Add `tests/indexer/ts-extractor.test.ts` with example tests: kinds, `Class.method` names, `export`, `export default`, export lists, re-exports adding no symbols, and exact 1-based start and end lines.
   - _Requirements: indexer/R3.1, indexer/R3.2, indexer/R3.3, indexer/R3.4, indexer/R3.5, indexer/R3.6, indexer/R3.7, indexer/R3.8, indexer/R3.9_
 
-- [ ] 3. Python symbol extractor
+- [x] 3. Python symbol extractor
   - Create `src/indexer/py-extractor.ts` following design.md.
   - Create fixture `tests/fixtures/py-basic/` (plain files): `app/core.py` with functions (one async, one decorated, one private `_helper`), a class with methods, and `__all__`; plus `tests/test_core.py` with `def test_*` functions.
   - Add `tests/indexer/py-extractor.test.ts` with example tests: kinds, `Class.method`, decorator lines in the range, `__all__` filtering, underscore rule, `__all__` that is not a list of strings being ignored.
