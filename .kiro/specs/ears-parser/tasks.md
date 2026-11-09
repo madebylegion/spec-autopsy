@@ -2,14 +2,14 @@
 
 Each task is small enough for one call. Tests live in `tests/parser/`. Run tests with `npx vitest --run` and type check with `npx tsc --noEmit`.
 
-- [ ] 1. Project scaffold
+- [x] 1. Project scaffold
   - Create `package.json` (ESM, `"type": "module"`, MIT, scripts `test` = `vitest --run` and `typecheck` = `tsc --noEmit`), `tsconfig.json` (strict, ESM, target ES2022, `src` and `tests` included), and `vitest.config.ts`.
   - Add `typescript`, `vitest`, `fast-check` and `@types/node` as dev dependencies with exact pinned versions (no `^` or `~`), looked up at install time.
   - Add `tests/parser/scaffold.test.ts` with one trivially passing test, and a `.gitignore` for `node_modules` and `dist` that does not ignore `.kiro/`.
   - Done when `npx vitest --run` and `npx tsc --noEmit` both pass.
   - _Requirements: enabler for all of ears-parser/R1 to ears-parser/R6; no behaviour yet_
 
-- [ ] 2. Types and the EARS statement parser
+- [x] 2. Types and the EARS statement parser
   - Create `src/parser/types.ts` and `src/parser/statement-parser.ts` following design.md (split at SHALL, system after the last "the", clause cut, THEN handling, pattern choice, whitespace normalisation).
   - Add `tests/parser/statement-parser.test.ts` with example-based tests: each of the five patterns, a complex form, upper, lower and mixed case keywords, the Kiro form `WHEN ... THEN the system SHALL ...`, and whitespace collapsing.
   - _Requirements: ears-parser/R2.1, ears-parser/R2.2, ears-parser/R2.3, ears-parser/R2.4, ears-parser/R2.5, ears-parser/R2.6, ears-parser/R2.7, ears-parser/R2.8, ears-parser/R3.1, ears-parser/R3.2, ears-parser/R3.4_
