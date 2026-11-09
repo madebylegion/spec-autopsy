@@ -9,6 +9,10 @@
     "test": "vitest --run",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "tree-sitter-wasms": "0.1.13",
+    "web-tree-sitter": "0.25.10"
+  },
   "devDependencies": {
     "@types/node": "22.10.2",
     "fast-check": "3.23.2",

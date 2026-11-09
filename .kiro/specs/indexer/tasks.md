@@ -2,7 +2,7 @@
 
 Each task is small enough for one call. Tests live in `tests/indexer/`; fixtures in `tests/fixtures/`. Run tests with `npx vitest --run` and type check with `npx tsc --noEmit`. Do not commit a nested `.git`.
 
-- [ ] 1. Dependencies, grammar loader and types
+- [x] 1. Dependencies, grammar loader and types
   - Add `web-tree-sitter` `0.25.10` and `tree-sitter-wasms` `0.1.13` to `dependencies` in `package.json` with exact pins (no `^` or `~`), then ask the human to run `npm install`.
   - Create `src/indexer/types.ts` as in design.md and `src/indexer/grammar-loader.ts` (`languageForExtension`, lazy shared `getParser`, grammar path via `createRequire(import.meta.url).resolve("tree-sitter-wasms/out/tree-sitter-<lang>.wasm")`).
   - Add `tests/indexer/grammar-loader.test.ts`: load typescript, tsx, javascript and python, parse a one-line snippet each and check `rootNode.hasError` is false; check the same Parser instance is returned on a second call; check the extension mapping.
