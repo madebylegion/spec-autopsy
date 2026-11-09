@@ -26,7 +26,7 @@ Each task is small enough for one call. Tests live in `tests/parser/`. Run tests
   - Add `tests/parser/requirement-properties.test.ts` using fast-check: (a) round trip, parse then print then parse gives an equal object apart from id, file and line, using generated fields that avoid keywords, "the", commas and line breaks; (b) ID stability when unrelated prose lines are inserted or shuffled between statements; (c) `parseRequirementsText` never throws on arbitrary strings, and every diagnostic has a code, a message, a file and a line of at least 1.
   - _Requirements: ears-parser/R6.1, ears-parser/R6.2, ears-parser/R6.3, ears-parser/R6.4, ears-parser/R6.5, ears-parser/R4.3, ears-parser/R4.5, ears-parser/R5.5, ears-parser/R5.6_
 
-- [ ] 5. Project-root discovery and self-parse test
+- [x] 5. Project-root discovery and self-parse test
   - Create `src/parser/project-reader.ts` with `parseProject(projectRoot)`: find `.kiro/specs/*/requirements.md`, sort by spec folder name with code-unit comparison, read each file, use project-relative `/` paths, return `unreadable-file` diagnostics instead of throwing, and return an empty result when `.kiro/specs` is missing. Export it from `src/parser/index.ts`.
   - Add `tests/parser/project-reader.test.ts`: a temporary project with several specs created out of order (expect sorted output), a missing `.kiro/specs`, and an unreadable entry.
   - Add a self-parse test that runs `parseProject` on this repo's root and checks that `ears-parser/R2.3` exists, that all 6 requirements are present, and that there are zero diagnostics for `.kiro/specs/ears-parser/requirements.md`.
