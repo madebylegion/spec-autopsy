@@ -1,11 +1,22 @@
 // Thin DOM code. The silhouette is SVG; every marker is a real HTML button over it.
 import type { Report } from "../report/types.js";
-import { MAP_HEIGHT, MAP_WIDTH, REGION_BOXES, markerVisible, regionForSpec } from "./view-model.js";
-import type { Filters, MapMarker, MapRegion } from "./view-model.js";
+import {
+  BODY_WIDTH,
+  MAP_HEIGHT,
+  MAP_WIDTH,
+  REGION_BOXES,
+  ZOMBIE_LABEL_MAX,
+  markerVisible,
+  middleTruncate,
+  regionForSpec,
+  regionStates,
+} from "./view-model.js";
+import type { Filters, MapMarker, MapRegion, Region, RegionState } from "./view-model.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 export interface BodyMapOptions {
+  report: Report;
   markers: MapMarker[];
   filters: Filters;
   selectedKey: string | null;
@@ -13,7 +24,6 @@ export interface BodyMapOptions {
 }
 
 export interface PhoneMapOptions extends BodyMapOptions {
-  report: Report;
   /** Whether the <details> is open; the caller keeps it across re-renders. */
   open: boolean;
   onToggle: (open: boolean) => void;
@@ -31,15 +41,13 @@ function svg<K extends keyof SVGElementTagNameMap>(
 }
 
 interface Part {
-  region: MapRegion;
+  region: Region;
   tag: "ellipse" | "rect";
   attrs: Record<string, string>;
 }
 
-const STRIP = REGION_BOXES["extra-limb"];
-
 /**
- * The body parts, front view, in drawing units. The extra limb strip comes last.
+ * The seven body parts, front view, in drawing units (the body is BODY_WIDTH wide).
  * The legs are two separate shapes with an 8-unit gap between them; each one
  * still contains its marker box (left 102..146, right 154..198).
  */
@@ -51,21 +59,10 @@ const PARTS: readonly Part[] = [
   { region: "right-arm", tag: "rect", attrs: { x: "206", y: "118", width: "64", height: "240", rx: "12" } },
   { region: "left-leg", tag: "rect", attrs: { x: "98", y: "340", width: "48", height: "260", rx: "12" } },
   { region: "right-leg", tag: "rect", attrs: { x: "154", y: "340", width: "48", height: "260", rx: "12" } },
-  {
-    region: "extra-limb",
-    tag: "rect",
-    attrs: {
-      x: String(STRIP.x - 6),
-      y: String(STRIP.y - 10),
-      width: String(STRIP.w + 12),
-      height: String(STRIP.h + 20),
-      rx: "6",
-    },
-  },
 ];
 
 /** The full silhouette on its slab. The slab frame is drawn inside the viewBox so it is never cut. */
-function silhouette(): SVGSVGElement {
+function silhouette(states: readonly RegionState[]): SVGSVGElement {
   const drawing = svg("svg", {
     viewBox: `0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`,
     preserveAspectRatio: "xMidYMid meet",
@@ -80,17 +77,23 @@ function silhouette(): SVGSVGElement {
     ),
   );
   for (const part of PARTS) {
-    drawing.append(svg(part.tag, part.attrs, part.region === "extra-limb" ? "map-strip" : "map-body"));
+    const state = states.find((s) => s.region === part.region)?.state ?? "unused";
+    const node = svg(
+      part.tag,
+      { ...part.attrs, "data-region": part.region, "data-region-state": state },
+      state === "unused" ? "map-body map-body--unused" : "map-body",
+    );
+    drawing.append(node);
   }
   return drawing;
 }
 
-/** A small silhouette with one region highlighted. The strip is drawn only when it is the region. */
+/** A small body with one region highlighted: all seven parts, in the body viewBox. */
 function regionIcon(region: MapRegion): SVGSVGElement {
   const icon = svg(
     "svg",
     {
-      viewBox: `0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`,
+      viewBox: `0 0 ${BODY_WIDTH} ${MAP_HEIGHT}`,
       preserveAspectRatio: "xMidYMid meet",
       "aria-hidden": "true",
       focusable: "false",
@@ -98,7 +101,6 @@ function regionIcon(region: MapRegion): SVGSVGElement {
     "icon",
   );
   for (const part of PARTS) {
-    if (part.region === "extra-limb" && region !== "extra-limb") continue;
     icon.append(svg(part.tag, part.attrs, part.region === region ? "icon-part icon-part--on" : "icon-part"));
   }
   return icon;
@@ -124,16 +126,83 @@ function markerButton(marker: MapMarker, options: BodyMapOptions): HTMLButtonEle
   return button;
 }
 
+/** One zombie in the wide zombie group: a dot and a short label; the full name is the title and the accessible name. */
+function zombieButton(marker: MapMarker, options: BodyMapOptions): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "marker marker--zombie";
+  if (marker.key === options.selectedKey) {
+    button.classList.add("marker--selected");
+    button.setAttribute("aria-current", "true");
+  }
+  button.title = marker.id;
+  button.setAttribute("aria-label", marker.name);
+  button.dataset["focusId"] = `marker:${marker.key}`;
+  button.dataset["markerKey"] = marker.key;
+  const dot = document.createElement("span");
+  dot.className = "marker-dot";
+  const label = document.createElement("span");
+  label.className = "marker-label";
+  label.setAttribute("aria-hidden", "true");
+  label.textContent = middleTruncate(marker.id, ZOMBIE_LABEL_MAX);
+  button.append(dot, label);
+  button.addEventListener("click", () => options.onSelect(marker.key));
+  return button;
+}
+
+const ZOMBIE_HEADING = "Extra limbs (zombies)";
+
+/** The zombie group: an HTML list placed over the right part of the map, in report order. */
+function zombieGroup(options: BodyMapOptions): HTMLElement {
+  const box = REGION_BOXES["extra-limb"];
+  const zombies = options.markers.filter((m) => m.region === "extra-limb");
+  const group = document.createElement("div");
+  group.className = "zombie-group";
+  group.setAttribute("role", "group");
+  group.setAttribute("aria-labelledby", "zombie-group-heading");
+  group.dataset["zone"] = "extra-limbs";
+  group.dataset["regionState"] = zombies.length > 0 ? "used" : "unused";
+  group.style.left = `${(box.x / MAP_WIDTH) * 100}%`;
+  group.style.top = `${(box.y / MAP_HEIGHT) * 100}%`;
+  group.style.width = `${(box.w / MAP_WIDTH) * 100}%`;
+  group.style.height = `${(box.h / MAP_HEIGHT) * 100}%`;
+  const heading = document.createElement("h3");
+  heading.className = "zombie-heading";
+  heading.id = "zombie-group-heading";
+  heading.textContent = ZOMBIE_HEADING;
+  group.append(heading);
+  if (zombies.length === 0) {
+    const none = document.createElement("p");
+    none.className = "zombie-none";
+    none.textContent = "none";
+    group.append(none);
+    return group;
+  }
+  const list = document.createElement("ul");
+  list.className = "zombie-list";
+  for (const marker of zombies) {
+    if (!markerVisible(marker, options.filters)) continue;
+    const item = document.createElement("li");
+    item.className = "zombie-item";
+    item.append(zombieButton(marker, options));
+    list.append(item);
+  }
+  group.append(list);
+  return group;
+}
+
 /** The silhouette with its markers. Markers hidden by a filter are left out; the others keep their place. */
 export function bodyMap(options: BodyMapOptions): HTMLElement {
   const figure = document.createElement("figure");
   figure.className = "map-figure";
   const wrap = document.createElement("div");
   wrap.className = "map";
-  wrap.append(silhouette());
+  wrap.append(silhouette(regionStates(options.report)));
   for (const marker of options.markers) {
+    if (marker.region === "extra-limb") continue;
     if (markerVisible(marker, options.filters)) wrap.append(markerButton(marker, options));
   }
+  wrap.append(zombieGroup(options));
   figure.append(wrap);
   return figure;
 }
@@ -194,12 +263,33 @@ function phoneMarker(marker: MapMarker, options: BodyMapOptions): HTMLButtonElem
   const dot = document.createElement("span");
   dot.className = "marker-dot";
   button.append(dot);
-  if (marker.region !== "extra-limb") {
-    const label = document.createElement("span");
-    label.className = "phone-marker-label";
-    label.textContent = shortId(marker.id);
-    button.append(label);
+  const label = document.createElement("span");
+  label.className = "phone-marker-label";
+  label.textContent = shortId(marker.id);
+  button.append(label);
+  button.addEventListener("click", () => options.onSelect(marker.key));
+  return button;
+}
+
+/** One phone row per zombie: the dot and the short name, 44 px high. */
+function phoneZombieRow(marker: MapMarker, options: BodyMapOptions): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "phone-zombie-row marker--zombie";
+  if (marker.key === options.selectedKey) {
+    button.classList.add("marker--selected");
+    button.setAttribute("aria-current", "true");
   }
+  button.title = marker.id;
+  button.setAttribute("aria-label", marker.name);
+  button.dataset["focusId"] = `pmarker:${marker.key}`;
+  const dot = document.createElement("span");
+  dot.className = "marker-dot";
+  const label = document.createElement("span");
+  label.className = "marker-label";
+  label.setAttribute("aria-hidden", "true");
+  label.textContent = middleTruncate(marker.id, ZOMBIE_LABEL_MAX);
+  button.append(dot, label);
   button.addEventListener("click", () => options.onSelect(marker.key));
   return button;
 }
@@ -223,6 +313,24 @@ function specBlock(
   grid.className = "marker-grid";
   for (const marker of markers) grid.append(phoneMarker(marker, options));
   block.append(regionIcon(region), title, count, grid);
+  return block;
+}
+
+/** The phone zombie block: the same heading as the wide group and a single-column list of rows. */
+function phoneZombieBlock(zombies: MapMarker[], shown: MapMarker[], options: BodyMapOptions): HTMLElement {
+  const block = document.createElement("section");
+  block.className = "spec-block spec-block--zombies";
+  block.dataset["zone"] = "extra-limbs";
+  const title = document.createElement("h3");
+  title.className = "spec-name";
+  title.textContent = ZOMBIE_HEADING;
+  const count = document.createElement("p");
+  count.className = "spec-count";
+  count.textContent = plural(zombies.length, "zombie");
+  const list = document.createElement("div");
+  list.className = "phone-zombie-list";
+  for (const marker of shown) list.append(phoneZombieRow(marker, options));
+  block.append(regionIcon("extra-limb"), title, count, list);
   return block;
 }
 
@@ -272,7 +380,7 @@ export function phoneMap(options: PhoneMapOptions): HTMLElement {
   const zombies = options.markers.filter((m) => m.region === "extra-limb");
   if (zombies.length > 0) {
     const shown = zombies.filter((m) => markerVisible(m, options.filters));
-    details.append(specBlock(plural(zombies.length, "zombie"), "extra-limb", shown, options, "Extra limb"));
+    details.append(phoneZombieBlock(zombies, shown, options));
   }
   if (options.report.specs.length === 0 && zombies.length === 0) {
     const none = document.createElement("p");

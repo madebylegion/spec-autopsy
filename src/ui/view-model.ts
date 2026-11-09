@@ -179,11 +179,12 @@ export interface Point {
   y: number;
 }
 
-/** Size of the SVG drawing, in drawing units. */
-export const MAP_WIDTH = 300;
+/** Size of the SVG drawing, in drawing units. The body is BODY_WIDTH wide; the rest holds the zombie group. */
+export const BODY_WIDTH = 300;
+export const MAP_WIDTH = 460;
 export const MAP_HEIGHT = 700;
 
-/** Where the markers of each region go. The "extra limb" strip is for zombies. */
+/** Where the markers of each region go. The "extra limb" box is for the zombie group. */
 export const REGION_BOXES: Readonly<Record<MapRegion, Box>> = {
   head: { x: 110, y: 22, w: 80, h: 76 },
   chest: { x: 98, y: 112, w: 104, h: 112 },
@@ -192,8 +193,53 @@ export const REGION_BOXES: Readonly<Record<MapRegion, Box>> = {
   "right-arm": { x: 212, y: 122, w: 52, h: 230 },
   "left-leg": { x: 102, y: 344, w: 44, h: 250 },
   "right-leg": { x: 154, y: 344, w: 44, h: 250 },
-  "extra-limb": { x: 20, y: 616, w: 260, h: 70 },
+  "extra-limb": { x: 312, y: 100, w: 140, h: 490 },
 };
+
+/** The seven body regions, in drawing order. */
+export const BODY_REGIONS: readonly Region[] = REGIONS;
+
+export interface RegionState {
+  region: Region;
+  state: "used" | "unused";
+  /** Spec names in this region, in report order. */
+  specs: string[];
+  /** Requirement ids of those specs, in report order. */
+  requirementIds: string[];
+}
+
+/** Always 7 entries in BODY_REGIONS order; a region is used when at least one spec maps to it. */
+export function regionStates(report: Report): RegionState[] {
+  const groups = groupByRegion(report);
+  return BODY_REGIONS.map((region): RegionState => {
+    const group = groups.find((g) => g.region === region);
+    if (group === undefined) return { region, state: "unused", specs: [], requirementIds: [] };
+    return {
+      region,
+      state: "used",
+      specs: [...group.specs],
+      requirementIds: [...group.requirementIds],
+    };
+  });
+}
+
+/** Longest zombie label drawn in the zombie group. */
+export const ZOMBIE_LABEL_MAX = 16;
+
+/**
+ * Shortens text to at most `max` characters by cutting the middle and putting
+ * one "…" there; the first and last characters are kept when max >= 3.
+ */
+export function middleTruncate(text: string, max: number): string {
+  const limit = Number.isFinite(max) ? Math.max(0, Math.trunc(max)) : 0;
+  if (text.length <= limit) return text;
+  if (limit === 0) return "";
+  if (limit === 1) return "…";
+  const keep = limit - 1;
+  const head = Math.ceil(keep / 2);
+  const tail = keep - head;
+  return `${text.slice(0, head)}…${tail > 0 ? text.slice(text.length - tail) : ""}`;
+}
 
 export interface Grid {
   /** Side of one square cell. */

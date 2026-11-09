@@ -281,16 +281,21 @@ body {
   min-width: 1ch;
 }
 
-/* Body map (wide) */
+/*
+  Body map (wide). The drawing is --map-w by --map-h units: the body (300 wide)
+  on the left and the zombie group (an HTML list) on the right.
+*/
 .map-figure {
   margin: 0;
 }
 
 .map {
+  --map-w: 460;
+  --map-h: 700;
   position: relative;
-  width: min(100%, 340px);
+  width: min(100%, 520px);
   margin: 0 auto;
-  aspect-ratio: 300 / 700;
+  aspect-ratio: var(--map-w) / var(--map-h);
   container-type: inline-size;
 }
 
@@ -314,11 +319,82 @@ body {
   stroke-width: 2;
 }
 
-.map-strip {
-  fill: none;
-  stroke: var(--slab-line);
-  stroke-width: 2;
-  stroke-dasharray: 6 4;
+/* A region no spec maps to is still drawn, only dimmer. */
+.map-body--unused {
+  stroke-opacity: 0.45;
+}
+
+/* The zombie group: placed from REGION_BOXES["extra-limb"] in percentages by the script. */
+.zombie-group {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  overflow-y: auto;
+  border: 2px dashed var(--slab-line);
+}
+
+.zombie-heading {
+  flex: none;
+  margin: 0 0 6px;
+  color: var(--bone-dim);
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.zombie-none {
+  margin: 0;
+  color: var(--bone-dim);
+  font-size: 0.875rem;
+}
+
+.zombie-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.zombie-item {
+  min-width: 0;
+}
+
+.zombie-group .marker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--tap);
+  height: auto;
+  padding: 0 4px;
+  transform: none;
+  color: var(--bone);
+  text-align: left;
+}
+
+.zombie-group .marker-dot {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+
+.zombie-group .marker:focus-visible,
+.phone-zombie-row:focus-visible {
+  outline-offset: -3px;
+}
+
+.marker-label {
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 /* Legend: the drawn marker and its meaning, text at 4.5:1 or better. */
@@ -418,8 +494,8 @@ body {
 .marker-dot {
   display: block;
   box-sizing: border-box;
-  width: max(10px, calc(var(--dot-units) * 100cqw / 300));
-  height: max(10px, calc(var(--dot-units) * 100cqw / 300));
+  width: max(10px, calc(var(--dot-units) * 100cqw / var(--map-w)));
+  height: max(10px, calc(var(--dot-units) * 100cqw / var(--map-w)));
   border-radius: 50%;
 }
 
@@ -479,6 +555,7 @@ body {
   border-top: 1px solid var(--slab-line);
 }
 
+/* The icon uses the body viewBox (300 x 700), so 24 x 56 keeps its proportions. */
 .spec-block .icon {
   grid-row: 1 / 3;
   width: 24px;
@@ -545,6 +622,34 @@ body {
   font-size: 0.6875rem;
   line-height: 1;
   white-space: nowrap;
+}
+
+/* Phone zombie block: one 44 px row per zombie. */
+.phone-zombie-list {
+  display: grid;
+  grid-column: 1 / -1;
+  margin-top: 8px;
+}
+
+.phone-zombie-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 4px;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: var(--bone);
+  text-align: left;
+  cursor: pointer;
+}
+
+.phone-zombie-row .marker-dot {
+  flex: none;
+  width: 14px;
+  height: 14px;
 }
 
 /* Detail panel */
@@ -851,7 +956,7 @@ body {
 @media (min-width: 1024px) {
   .report {
     display: grid;
-    grid-template-columns: 22rem minmax(0, 1fr);
+    grid-template-columns: 28rem minmax(0, 1fr);
     gap: 24px;
     align-items: start;
   }
@@ -865,7 +970,7 @@ body {
   }
 
   .map {
-    width: min(100%, calc((100vh - var(--map-chrome)) * 300 / 700));
+    width: min(100%, calc((100vh - var(--map-chrome)) * var(--map-w) / var(--map-h)));
     min-width: 150px;
   }
 

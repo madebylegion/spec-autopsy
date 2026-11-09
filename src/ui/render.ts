@@ -269,6 +269,7 @@ function reportView(report: Report, options: RenderOptions, withTags: boolean): 
   const view = el("div", "report");
   const markers = buildMarkers(report);
   const mapInputs = {
+    report,
     markers,
     filters: options.filters,
     selectedKey: options.selectedKey,
@@ -290,7 +291,6 @@ function reportView(report: Report, options: RenderOptions, withTags: boolean): 
     side,
     phoneMap({
       ...mapInputs,
-      report,
       open: phoneMapOpen,
       onToggle: (open) => {
         phoneMapOpen = open;
