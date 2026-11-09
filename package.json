@@ -7,8 +7,11 @@
   "private": true,
   "scripts": {
     "test": "vitest --run",
-    "typecheck": "tsc --noEmit",
-    "autopsy": "tsx src/cli/autopsy.ts"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/ui/tsconfig.ui.json",
+    "autopsy": "tsx src/cli/autopsy.ts",
+    "ui:dev": "vite",
+    "ui:build": "vite build",
+    "ui:preview": "vite preview"
   },
   "dependencies": {
     "tree-sitter-wasms": "0.1.13",
@@ -19,6 +22,7 @@
     "fast-check": "3.23.2",
     "tsx": "4.20.6",
     "typescript": "5.7.2",
+    "vite": "7.3.8",
     "vitest": "2.1.8"
   }
 }

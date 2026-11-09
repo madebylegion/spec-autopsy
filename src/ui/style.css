@@ -1,0 +1,261 @@
+/* Token block (provisional values; task 5 measures and finalises them). */
+:root {
+  --slab: #1b1d20;
+  --slab-raised: #262a2e;
+  --slab-line: #6f767d;
+  --bone: #ebe7da;
+  --bone-dim: #b4b1a6;
+  --ghost-ink: #9cc3e8;
+  --zombie-ink: #a2d28c;
+  --unproven-ink: #e2b552;
+  --focus-ring: #f6f3e8;
+  --tag-ink: #14161a;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Arial Narrow", "Roboto Condensed", "Liberation Sans Narrow", "Helvetica Neue", Arial, sans-serif;
+  --tap: 44px;
+  --swing: 200ms;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--slab);
+  color: var(--bone);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 32px;
+  padding: 16px;
+  border-bottom: 1px solid var(--slab-line);
+}
+
+.top-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  min-width: 0;
+}
+
+.project {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+}
+
+.version {
+  color: var(--bone-dim);
+  font-size: 0.875rem;
+}
+
+.bigs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+
+.big {
+  display: flex;
+  flex-direction: column;
+}
+
+.big-count {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.big-label {
+  color: var(--bone-dim);
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.big--ghost .big-count {
+  color: var(--ghost-ink);
+}
+
+.big--zombie .big-count {
+  color: var(--zombie-ink);
+}
+
+.big--unproven .big-count {
+  color: var(--unproven-ink);
+}
+
+.open-report {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 12px;
+  margin-left: auto;
+  border: 1px solid var(--slab-line);
+  background: var(--slab-raised);
+  cursor: pointer;
+}
+
+.open-report:focus-within {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.open-report-input {
+  max-width: 14rem;
+  margin-left: 8px;
+  color: var(--bone-dim);
+  font: inherit;
+  font-size: 0.8125rem;
+}
+
+.page {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.status {
+  margin: 24px 0;
+  font-size: 1.125rem;
+}
+
+.error-state,
+.banner {
+  margin: 16px 0;
+  padding: 12px 16px;
+  border: 1px solid var(--slab-line);
+  background: var(--slab-raised);
+}
+
+.error-title,
+.banner-title {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+}
+
+.error-line,
+.banner-line {
+  margin: 4px 0;
+}
+
+.section-title {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+}
+
+.tags {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag-item {
+  min-width: 0;
+}
+
+.tag {
+  height: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--slab-line);
+  border-left-width: 6px;
+  background: var(--slab-raised);
+}
+
+.tag--ghost {
+  border-left-color: var(--ghost-ink);
+}
+
+.tag--zombie {
+  border-left-color: var(--zombie-ink);
+}
+
+.tag--unproven {
+  border-left-color: var(--unproven-ink);
+}
+
+.tag-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.tag-hole {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--slab-line);
+  border-radius: 50%;
+}
+
+.tag-id {
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+}
+
+.tag-type {
+  margin-left: auto;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tag--ghost .tag-type {
+  color: var(--ghost-ink);
+}
+
+.tag--zombie .tag-type {
+  color: var(--zombie-ink);
+}
+
+.tag--unproven .tag-type {
+  color: var(--unproven-ink);
+}
+
+.tag-title {
+  margin: 8px 0;
+}
+
+.tag-where,
+.tag-confidence {
+  margin: 2px 0;
+  color: var(--bone-dim);
+  font-size: 0.875rem;
+}
+
+.tag-cause {
+  margin: 8px 0 0;
+  font-size: 0.875rem;
+}
+
+.tag-cause-label {
+  color: var(--bone-dim);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
