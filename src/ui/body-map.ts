@@ -38,15 +38,19 @@ interface Part {
 
 const STRIP = REGION_BOXES["extra-limb"];
 
-/** The body parts, front view, in drawing units. The extra limb strip comes last. */
+/**
+ * The body parts, front view, in drawing units. The extra limb strip comes last.
+ * The legs are two separate shapes with an 8-unit gap between them; each one
+ * still contains its marker box (left 102..146, right 154..198).
+ */
 const PARTS: readonly Part[] = [
   { region: "head", tag: "ellipse", attrs: { cx: "150", cy: "60", rx: "50", ry: "46" } },
   { region: "chest", tag: "rect", attrs: { x: "92", y: "108", width: "116", height: "122", rx: "10" } },
   { region: "abdomen", tag: "rect", attrs: { x: "96", y: "230", width: "108", height: "108", rx: "10" } },
   { region: "left-arm", tag: "rect", attrs: { x: "30", y: "118", width: "64", height: "240", rx: "12" } },
   { region: "right-arm", tag: "rect", attrs: { x: "206", y: "118", width: "64", height: "240", rx: "12" } },
-  { region: "left-leg", tag: "rect", attrs: { x: "98", y: "340", width: "52", height: "260", rx: "12" } },
-  { region: "right-leg", tag: "rect", attrs: { x: "150", y: "340", width: "52", height: "260", rx: "12" } },
+  { region: "left-leg", tag: "rect", attrs: { x: "98", y: "340", width: "48", height: "260", rx: "12" } },
+  { region: "right-leg", tag: "rect", attrs: { x: "154", y: "340", width: "48", height: "260", rx: "12" } },
   {
     region: "extra-limb",
     tag: "rect",

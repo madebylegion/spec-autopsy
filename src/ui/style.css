@@ -640,17 +640,22 @@ body {
   transform-origin: 22px 0;
 }
 
-/* The string: runs from above the card down through the hole. */
+/*
+  The string: a closed loop (a tall ring) that hangs above the card and passes
+  through the hole. The hole centre is 23px from the left and 26px from the top
+  of the padding box, so the ring ends just below that centre and its lower arc
+  sits inside the hole.
+*/
 .tag::before {
   content: "";
   position: absolute;
-  top: -26px;
-  left: 21px;
-  width: 2px;
-  height: 52px;
-  background: var(--bone-dim);
-  transform: rotate(10deg);
-  transform-origin: 50% 100%;
+  top: -22px;
+  left: 17px;
+  width: 12px;
+  height: 50px;
+  border: 2px solid var(--bone-dim);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 .tag--selected {
@@ -695,21 +700,31 @@ body {
   letter-spacing: 0.12em;
 }
 
+/* The requirement text: 4 lines on a wide screen, 5 on a phone; the line clamp decides the cut. */
 .tag-title {
+  display: -webkit-box;
   margin: 8px 0 0;
+  overflow: hidden;
   font-weight: 600;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
 }
 
+/* The "Open details" control: at least 44 x 44 px, with room above and below. */
 .link-button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-width: var(--tap);
   min-height: var(--tap);
-  padding: 0 4px;
+  padding: 0 12px;
+  margin-block: 8px;
   border: 0;
   background: transparent;
   color: var(--bone);
   font: inherit;
   font-size: 0.9375rem;
+  text-align: center;
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;
@@ -809,6 +824,10 @@ body {
   .filters {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tag-title {
+    -webkit-line-clamp: 5;
   }
 }
 

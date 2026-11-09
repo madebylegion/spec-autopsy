@@ -173,6 +173,7 @@ function toggle(
 
 function filterBar(report: Report, options: RenderOptions): HTMLElement {
   const counts = typeCounts(report.findings);
+  const lowCount = report.findings.filter((finding) => finding.confidence.level === "low").length;
   const f = options.filters;
   const bar = el("div", "filters");
   bar.setAttribute("role", "group");
@@ -187,7 +188,7 @@ function filterBar(report: Report, options: RenderOptions): HTMLElement {
     toggle(`Unproven ${counts.unproven}`, f.unproven, "filter:unproven", "unproven", () =>
       options.onFilters({ ...f, unproven: !f.unproven }),
     ),
-    toggle("Low confidence", f.lowOnly, "filter:low", "low", () =>
+    toggle(`Low confidence ${lowCount}`, f.lowOnly, "filter:low", "low", () =>
       options.onFilters({ ...f, lowOnly: !f.lowOnly }),
     ),
   );

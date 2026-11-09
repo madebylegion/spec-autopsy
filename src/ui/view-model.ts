@@ -84,8 +84,8 @@ export function typeCounts(findings: Finding[]): Record<FindingType, number> {
   return counts;
 }
 
-/** About three lines of card text. */
-export const TITLE_MAX_CHARS = 120;
+/** A safety cap only: the CSS line clamp (4 lines wide, 5 on a phone) decides what is shown. */
+export const TITLE_MAX_CHARS = 280;
 
 /** Cuts on a word and adds "..."; the result is never longer than maxChars. */
 export function clampTitle(text: string, maxChars: number = TITLE_MAX_CHARS): string {
