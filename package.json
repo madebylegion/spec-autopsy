@@ -1,0 +1,18 @@
+{
+  "name": "spec-autopsy",
+  "version": "0.1.0",
+  "description": "An autopsy table for AI-built code: checks whether the code matches the specs it was given.",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "test": "vitest --run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "fast-check": "3.23.2",
+    "typescript": "5.7.2",
+    "vitest": "2.1.8"
+  }
+}
