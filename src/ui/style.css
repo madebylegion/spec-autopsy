@@ -1,17 +1,39 @@
-/* Token block (provisional values; task 5 measures and finalises them). */
+/*
+  Token block. Every colour of the page is defined here and nowhere else.
+  Ratios are WCAG contrast ratios, measured with the relative-luminance formula
+  (the same function runs in tests/report-and-morgue/style-rules.test.ts).
+
+  Surfaces: slab-grey and bone-white. Tags: manila paper with dark ink.
+  Accents (one per type, none of them cyan, green or amber):
+    ghost = oxidised red, zombie = formalin olive, unproven = ember orange.
+
+  --bone on --slab 13.4, on --slab-raised 11.1
+  --bone-dim on --slab-raised 6.7, on --slab 8.1
+  --slab-line on --slab-raised 3.6, on --slab 4.4 (borders, field edges, marker edges: 3:1)
+  --ghost-ink on --slab-raised 5.4, on --slab 6.5
+  --zombie-ink on --slab-raised 6.4, on --slab 7.7
+  --unproven-ink on --slab-raised 5.6, on --slab 6.7
+  --focus-ring on --slab 14.5; on a tag the ring is --tag-ink on --tag-paper 11.1
+  --tag-ink on --tag-paper 11.1
+  --tag-ink on --ghost-ink 7.3, on --zombie-ink 8.7, on --unproven-ink 7.6
+  --tag-paper-edge on --tag-paper 3.3 (the outline of a tag)
+*/
 :root {
-  --slab: #1b1d20;
-  --slab-raised: #262a2e;
-  --slab-line: #6f767d;
-  --bone: #ebe7da;
-  --bone-dim: #b4b1a6; /* on --slab-raised about 6.7:1, used for all metadata text */
-  --ghost-ink: #9cc3e8;
-  --zombie-ink: #a2d28c;
-  --unproven-ink: #e2b552;
-  --focus-ring: #f6f3e8;
-  --tag-ink: #14161a;
+  --slab: #1c1e21;
+  --slab-raised: #2a2d31;
+  --slab-line: #7d848b;
+  --bone: #ece6d6;
+  --bone-dim: #b9b4a6;
+  --ghost-ink: #ec8576;
+  --zombie-ink: #a9b85a;
+  --unproven-ink: #e8903a;
+  --focus-ring: #f4efe0;
+  --tag-paper: #d8c595;
+  --tag-paper-edge: #7a6638;
+  --tag-ink: #14110d;
   --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-display: "Arial Narrow", "Roboto Condensed", "Liberation Sans Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Arial Narrow", "Roboto Condensed", "Liberation Sans Narrow", "DejaVu Sans Condensed",
+    "Helvetica Neue", Arial, sans-serif;
   --tap: 44px;
   --swing: 200ms;
 }
@@ -34,13 +56,46 @@ body {
   outline-offset: 2px;
 }
 
+.tag :focus-visible {
+  outline-color: var(--tag-ink);
+}
+
+/* Accent per type: one custom property, read by tags, stamps, numbers and filters. */
+.tag--ghost,
+.tag-type--ghost,
+.big--ghost,
+.toggle--ghost {
+  --accent: var(--ghost-ink);
+}
+
+.tag--zombie,
+.tag-type--zombie,
+.big--zombie,
+.toggle--zombie {
+  --accent: var(--zombie-ink);
+}
+
+.tag--unproven,
+.tag-type--unproven,
+.big--unproven,
+.toggle--unproven {
+  --accent: var(--unproven-ink);
+}
+
+.tag-type--proven,
+.toggle--low {
+  --accent: var(--bone);
+}
+
+/* Header: the slab plate with the three totals as big condensed numerals. */
 .top {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 16px 32px;
+  gap: 12px 32px;
   padding: 16px;
-  border-bottom: 1px solid var(--slab-line);
+  background: var(--slab-raised);
+  border-bottom: 2px solid var(--slab-line);
 }
 
 .top-title {
@@ -55,6 +110,9 @@ body {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .version {
@@ -65,37 +123,31 @@ body {
 .bigs {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 24px;
+  gap: 8px 16px;
 }
 
 .big {
   display: flex;
   flex-direction: column;
+  min-width: 6.5rem;
+  padding: 0 0 0 12px;
+  border-left: 6px solid var(--accent);
 }
 
 .big-count {
+  color: var(--accent);
   font-family: var(--font-display);
-  font-size: 2.5rem;
+  font-size: 3rem;
+  font-weight: 700;
   line-height: 1;
 }
 
 .big-label {
   color: var(--bone-dim);
-  font-size: 0.8125rem;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.big--ghost .big-count {
-  color: var(--ghost-ink);
-}
-
-.big--zombie .big-count {
-  color: var(--zombie-ink);
-}
-
-.big--unproven .big-count {
-  color: var(--unproven-ink);
+  letter-spacing: 0.1em;
 }
 
 /* The label is the button; the native file input is hidden but stays focusable. */
@@ -107,10 +159,14 @@ body {
   min-height: var(--tap);
   padding: 0 20px;
   margin-left: auto;
-  border: 1px solid var(--bone-dim);
-  background: var(--slab-raised);
+  border: 2px solid var(--bone);
+  background: transparent;
   color: var(--bone);
-  font-size: 0.9375rem;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   cursor: pointer;
 }
 
@@ -132,7 +188,7 @@ body {
 }
 
 .page {
-  max-width: 72rem;
+  max-width: 90rem;
   margin: 0 auto;
   padding: 16px;
 }
@@ -155,6 +211,8 @@ body {
   margin: 0 0 8px;
   font-family: var(--font-display);
   font-size: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .error-line,
@@ -166,46 +224,71 @@ body {
   margin: 0 0 12px;
   font-family: var(--font-display);
   font-size: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
-/* Filters */
+/* Layout: phone first. The wide map column is hidden on a phone; the <details> map is hidden when wide. */
+.report {
+  display: block;
+}
+
+.map-col {
+  display: none;
+}
+
+.tags-col {
+  min-width: 0;
+}
+
+.map-phone {
+  margin: 24px 0 0;
+}
+
+/* Filters: outline when off; filled with the type colour and a check mark when on. */
 .filters {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 0 0 16px;
+  margin: 0 0 12px;
 }
 
 .toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   min-height: var(--tap);
   padding: 0 16px;
-  border: 1px solid var(--bone-dim);
-  background: var(--slab-raised);
+  border: 2px solid var(--accent);
+  background: transparent;
   color: var(--bone);
-  font: inherit;
-  font-size: 0.9375rem;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   cursor: pointer;
 }
 
 .toggle[aria-pressed="true"] {
-  border-color: var(--bone);
-  background: var(--bone);
+  background: var(--accent);
   color: var(--tag-ink);
+  font-weight: 700;
 }
 
-/* Body map */
-.map-section {
-  margin: 0 0 24px;
+.toggle-mark {
+  display: inline-block;
+  min-width: 1ch;
 }
 
+/* Body map (wide) */
 .map-figure {
   margin: 0;
 }
 
 .map {
   position: relative;
-  width: 100%;
-  max-width: 340px;
+  width: min(100%, 340px);
   margin: 0 auto;
   aspect-ratio: 300 / 700;
   container-type: inline-size;
@@ -221,6 +304,8 @@ body {
 
 .map-slab {
   fill: var(--slab-raised);
+  stroke: var(--slab-line);
+  stroke-width: 2;
 }
 
 .map-body {
@@ -236,11 +321,82 @@ body {
   stroke-dasharray: 6 4;
 }
 
-.map-caption {
-  max-width: 340px;
-  margin: 8px auto 0;
+/* Legend: the drawn marker and its meaning, text at 4.5:1 or better. */
+.legend {
+  margin: 12px auto 0;
+  padding: 8px 12px;
+  border: 1px solid var(--slab-line);
+  background: var(--slab-raised);
+}
+
+.legend-title {
+  margin: 0 0 4px;
   color: var(--bone-dim);
+  font-family: var(--font-display);
   font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.legend-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+  color: var(--bone);
+  font-size: 0.875rem;
+}
+
+.swatch {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 28px;
+  height: 18px;
+  background-clip: content-box;
+}
+
+.swatch--ghost,
+.swatch--unproven,
+.swatch--proven {
+  width: 18px;
+  margin: 0 5px;
+  border-radius: 50%;
+}
+
+.swatch--ghost {
+  border: 2px solid var(--ghost-ink);
+}
+
+.swatch--unproven {
+  border: 2px dashed var(--unproven-ink);
+}
+
+.swatch--proven {
+  background: var(--bone-dim);
+}
+
+.swatch--zombie {
+  border: 2px dashed var(--slab-line);
+  border-radius: 4px;
+}
+
+.swatch--zombie::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 50%;
+  width: 10px;
+  margin-left: -5px;
+  background: var(--zombie-ink);
 }
 
 /* The button is the 44 px hit area; the dot inside is the visible marker. */
@@ -289,12 +445,116 @@ body {
   outline-offset: 3px;
 }
 
+/* Body map (phone): a <details> with one block per spec and a 44 px marker pitch. */
+.map-phone-summary {
+  display: list-item;
+  min-height: var(--tap);
+  padding: 10px 12px;
+  border: 2px solid var(--slab-line);
+  background: var(--slab-raised);
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  cursor: pointer;
+}
+
+.map-phone-title {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.map-phone-count {
+  color: var(--bone-dim);
+}
+
+.map-phone[open] .map-phone-summary {
+  margin-bottom: 12px;
+}
+
+.spec-block {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  column-gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--slab-line);
+}
+
+.spec-block .icon {
+  grid-row: 1 / 3;
+  width: 24px;
+  height: 56px;
+}
+
+.icon-part {
+  fill: none;
+  stroke: var(--slab-line);
+  stroke-width: 12;
+}
+
+.icon-part--on {
+  fill: var(--bone);
+  stroke: var(--bone);
+}
+
+.spec-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.spec-count {
+  margin: 0;
+  color: var(--bone-dim);
+  font-size: 0.8125rem;
+}
+
+.marker-grid {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(auto-fill, var(--tap));
+  margin-top: 8px;
+}
+
+.phone-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: var(--bone-dim);
+  cursor: pointer;
+}
+
+.phone-marker .marker-dot {
+  width: 18px;
+  height: 18px;
+}
+
+.phone-marker-label {
+  max-width: 100%;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 /* Detail panel */
 .detail {
   margin: 0 0 24px;
   padding: 16px;
-  border: 1px solid var(--bone);
+  border: 2px solid var(--bone);
   background: var(--slab-raised);
+  transform-origin: 0 0;
+  animation: tag-swing var(--swing) ease-out;
 }
 
 .detail-top {
@@ -352,82 +612,92 @@ body {
   font-size: 0.875rem;
 }
 
-/* Toe tags */
+/* Toe tags: manila paper, a punched hole, a string, the type stamped in the accent colour. */
 .tags {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px 16px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+/* Room above each tag for its string. */
 .tag-item {
   min-width: 0;
+  padding-top: 24px;
 }
 
-/* Every card has the same neutral border; the type colour is on the type label only. */
 .tag {
+  position: relative;
   height: 100%;
   padding: 12px 16px;
-  border: 1px solid var(--slab-line);
-  background: var(--slab-raised);
+  border: 1px solid var(--tag-paper-edge);
+  border-top: 8px solid var(--accent);
+  border-radius: 30px 6px 6px 6px;
+  background: var(--tag-paper);
+  color: var(--tag-ink);
+  transform-origin: 22px 0;
+}
+
+/* The string: runs from above the card down through the hole. */
+.tag::before {
+  content: "";
+  position: absolute;
+  top: -26px;
+  left: 21px;
+  width: 2px;
+  height: 52px;
+  background: var(--bone-dim);
+  transform: rotate(10deg);
+  transform-origin: 50% 100%;
 }
 
 .tag--selected {
-  border-color: var(--bone);
-  box-shadow: inset 0 0 0 2px var(--bone);
+  outline: 3px solid var(--bone);
+  outline-offset: 3px;
+  animation: tag-swing var(--swing) ease-out;
 }
 
 .tag-top {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 8px;
+  gap: 4px 10px;
+  min-height: 28px;
 }
 
 .tag-hole {
-  width: 12px;
-  height: 12px;
-  border: 2px solid var(--slab-line);
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--tag-paper-edge);
   border-radius: 50%;
+  background: var(--slab);
 }
 
 .tag-id {
   font-family: var(--font-display);
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
+  font-weight: 700;
 }
 
+/* The stamp: type name in a condensed uppercase face on the accent colour. */
 .tag-type {
   margin-left: auto;
-  padding: 0 8px;
-  border: 1px solid currentColor;
-  font-size: 0.75rem;
+  padding: 0 10px;
+  background: var(--accent);
+  color: var(--tag-ink);
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.tag--ghost .tag-type,
-.tag-type--ghost {
-  color: var(--ghost-ink);
-}
-
-.tag--zombie .tag-type,
-.tag-type--zombie {
-  color: var(--zombie-ink);
-}
-
-.tag--unproven .tag-type,
-.tag-type--unproven {
-  color: var(--unproven-ink);
-}
-
-.tag-type--proven {
-  color: var(--bone-dim);
+  letter-spacing: 0.12em;
 }
 
 .tag-title {
   margin: 8px 0 0;
+  font-weight: 600;
 }
 
 .link-button {
@@ -445,7 +715,11 @@ body {
   cursor: pointer;
 }
 
-/* Metadata: one row per fact, a small label above each value, all at 4.5:1 or better. */
+.tag .link-button {
+  color: var(--tag-ink);
+}
+
+/* Metadata: one row per fact, a small label above each value. */
 .tag-meta {
   display: grid;
   gap: 10px;
@@ -470,6 +744,15 @@ body {
   font-size: 0.875rem;
 }
 
+.tag .meta-label {
+  color: var(--tag-ink);
+  font-weight: 700;
+}
+
+.tag .meta-value {
+  color: var(--tag-ink);
+}
+
 /* Paths break only after a "/"; the line number stays with the last part. */
 .path {
   overflow-wrap: normal;
@@ -484,7 +767,19 @@ body {
   white-space: nowrap;
 }
 
-@media (max-width: 600px) {
+/* The only motion: a short swing of a tag when it opens. Transform only. */
+@keyframes tag-swing {
+  from {
+    transform: rotate(-3deg);
+  }
+
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+/* Phone, under 700 px: totals across the full width, the button under them, filters two per row. */
+@media (max-width: 699.98px) {
   .top {
     flex-direction: column;
     align-items: stretch;
@@ -493,19 +788,76 @@ body {
 
   .bigs {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
     width: 100%;
   }
 
   .big {
-    align-items: center;
-    text-align: center;
+    min-width: 0;
+  }
+
+  .big-count {
+    font-size: 2.5rem;
   }
 
   .open-report {
     width: 100%;
     margin-left: 0;
+  }
+
+  .filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* From 700 px the silhouette is drawn at marker scale and the <details> map is not needed. */
+@media (min-width: 700px) {
+  .map-col {
+    display: block;
+    margin: 0 0 24px;
+  }
+
+  .map-phone {
+    display: none;
+  }
+
+  .tags {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Two columns: the map sticks on the left, filters and tags scroll on the right. */
+@media (min-width: 1024px) {
+  .report {
+    display: grid;
+    grid-template-columns: 22rem minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .map-col {
+    --map-chrome: 360px;
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px);
+    margin: 0;
+  }
+
+  .map {
+    width: min(100%, calc((100vh - var(--map-chrome)) * 300 / 700));
+    min-width: 150px;
+  }
+
+  .tags {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .tags {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

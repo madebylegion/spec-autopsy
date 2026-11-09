@@ -11,7 +11,8 @@
     "autopsy": "tsx src/cli/autopsy.ts",
     "ui:dev": "vite",
     "ui:build": "vite build",
-    "ui:preview": "vite preview"
+    "ui:preview": "vite preview",
+    "morgue": "tsx src/cli/autopsy.ts . --json src/ui/public/report.json && npm run ui:build"
   },
   "dependencies": {
     "tree-sitter-wasms": "0.1.13",

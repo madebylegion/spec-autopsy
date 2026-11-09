@@ -1,6 +1,6 @@
 // Thin DOM code. All text goes through textContent, never innerHTML.
 import type { Finding, Report } from "../report/types.js";
-import { bodyMap } from "./body-map.js";
+import { bodyMap, mapLegend, phoneMap } from "./body-map.js";
 import {
   applyFilters,
   buildMarkers,
@@ -24,6 +24,12 @@ export interface RenderOptions {
   onSelect: (key: string) => void;
   onClose: () => void;
 }
+
+/** Whether the phone "Body map" <details> is open; kept here so a re-render does not close it. */
+let phoneMapOpen = false;
+
+/** A check mark in text (U+2713, a text symbol and not an emoji) shows that a toggle is on. */
+const CHECK = "\u2713";
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -146,9 +152,52 @@ function toeTag(finding: Finding, key: string, selected: boolean, onSelect: (key
   return item;
 }
 
+function toggle(
+  label: string,
+  pressed: boolean,
+  id: string,
+  kind: string,
+  onClick: () => void,
+): HTMLElement {
+  const button = el("button", `toggle toggle--${kind}`);
+  button.type = "button";
+  button.setAttribute("aria-pressed", String(pressed));
+  button.dataset["focusId"] = id;
+  // The mark is a second cue for "on"; the state itself is read from aria-pressed.
+  const mark = el("span", "toggle-mark", pressed ? CHECK : "");
+  mark.setAttribute("aria-hidden", "true");
+  button.append(mark, el("span", "toggle-label", label));
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+function filterBar(report: Report, options: RenderOptions): HTMLElement {
+  const counts = typeCounts(report.findings);
+  const f = options.filters;
+  const bar = el("div", "filters");
+  bar.setAttribute("role", "group");
+  bar.setAttribute("aria-label", "Filters");
+  bar.append(
+    toggle(`Ghosts ${counts.ghost}`, f.ghost, "filter:ghost", "ghost", () =>
+      options.onFilters({ ...f, ghost: !f.ghost }),
+    ),
+    toggle(`Zombies ${counts.zombie}`, f.zombie, "filter:zombie", "zombie", () =>
+      options.onFilters({ ...f, zombie: !f.zombie }),
+    ),
+    toggle(`Unproven ${counts.unproven}`, f.unproven, "filter:unproven", "unproven", () =>
+      options.onFilters({ ...f, unproven: !f.unproven }),
+    ),
+    toggle("Low confidence", f.lowOnly, "filter:low", "low", () =>
+      options.onFilters({ ...f, lowOnly: !f.lowOnly }),
+    ),
+  );
+  return bar;
+}
+
+/** The filters sit directly above the toe tags. */
 function tagList(report: Report, options: RenderOptions): HTMLElement {
   const section = el("section", "tags-section");
-  section.append(el("h2", "section-title", "Toe tags"));
+  section.append(el("h2", "section-title", "Toe tags"), filterBar(report, options));
   const shown = sortFindings(applyFilters(report.findings, options.filters));
   if (shown.length === 0) {
     section.append(el("p", "status status--empty", "No findings match the filters."));
@@ -162,34 +211,6 @@ function tagList(report: Report, options: RenderOptions): HTMLElement {
   }
   section.append(list);
   return section;
-}
-
-function toggle(label: string, pressed: boolean, id: string, onClick: () => void): HTMLElement {
-  const button = el("button", "toggle", label);
-  button.type = "button";
-  button.setAttribute("aria-pressed", String(pressed));
-  button.dataset["focusId"] = id;
-  button.addEventListener("click", onClick);
-  return button;
-}
-
-function filterBar(report: Report, options: RenderOptions): HTMLElement {
-  const counts = typeCounts(report.findings);
-  const f = options.filters;
-  const bar = el("div", "filters");
-  bar.setAttribute("role", "group");
-  bar.setAttribute("aria-label", "Filters");
-  bar.append(
-    toggle(`Ghosts ${counts.ghost}`, f.ghost, "filter:ghost", () => options.onFilters({ ...f, ghost: !f.ghost })),
-    toggle(`Zombies ${counts.zombie}`, f.zombie, "filter:zombie", () =>
-      options.onFilters({ ...f, zombie: !f.zombie }),
-    ),
-    toggle(`Unproven ${counts.unproven}`, f.unproven, "filter:unproven", () =>
-      options.onFilters({ ...f, unproven: !f.unproven }),
-    ),
-    toggle("Low confidence", f.lowOnly, "filter:low", () => options.onFilters({ ...f, lowOnly: !f.lowOnly })),
-  );
-  return bar;
 }
 
 function list(items: string[], none: string): HTMLElement {
@@ -238,25 +259,43 @@ function detailPanel(detail: Detail, onClose: () => void): HTMLElement {
   return panel;
 }
 
+/**
+ * Wide screens: the map column (sticky) on the left, filters and tags on the right.
+ * Phones: the tags first and the map as a closed <details> at the end. Both map
+ * versions are in the DOM; CSS shows one of them, so each has its own focus ids.
+ */
 function reportView(report: Report, options: RenderOptions, withTags: boolean): HTMLElement {
   const view = el("div", "report");
-  view.append(filterBar(report, options));
-  const mapSection = el("section", "map-section");
-  mapSection.append(el("h2", "section-title", "Body map"));
-  mapSection.append(
-    bodyMap({
-      markers: buildMarkers(report),
-      filters: options.filters,
-      selectedKey: options.selectedKey,
-      onSelect: options.onSelect,
-    }),
-  );
-  view.append(mapSection);
+  const markers = buildMarkers(report);
+  const mapInputs = {
+    markers,
+    filters: options.filters,
+    selectedKey: options.selectedKey,
+    onSelect: options.onSelect,
+  };
+
+  const mapCol = el("section", "map-col");
+  mapCol.append(el("h2", "section-title", "Body map"), bodyMap(mapInputs), mapLegend());
+
+  const side = el("div", "tags-col");
   if (options.selectedKey !== null) {
     const detail = detailFor(report, options.selectedKey);
-    if (detail !== null) view.append(detailPanel(detail, options.onClose));
+    if (detail !== null) side.append(detailPanel(detail, options.onClose));
   }
-  if (withTags) view.append(tagList(report, options));
+  if (withTags) side.append(tagList(report, options));
+
+  view.append(
+    mapCol,
+    side,
+    phoneMap({
+      ...mapInputs,
+      report,
+      open: phoneMapOpen,
+      onToggle: (open) => {
+        phoneMapOpen = open;
+      },
+    }),
+  );
   return view;
 }
 

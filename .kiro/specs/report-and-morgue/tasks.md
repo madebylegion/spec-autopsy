@@ -31,7 +31,7 @@ Each task is small enough for one call and ends with its own tests. Tests live i
   - After this task the orchestrator runs `npm run ui:build` and takes screenshots.
   - _Requirements: report-and-morgue/R7.4, report-and-morgue/R8.1, report-and-morgue/R8.2, report-and-morgue/R8.3, report-and-morgue/R8.4, report-and-morgue/R8.5, report-and-morgue/R8.6, report-and-morgue/R8.7, report-and-morgue/R9.3, report-and-morgue/R9.4_
 
-- [ ] 5. Look, phone polish and `npm run morgue`
+- [x] 5. Look, phone polish and `npm run morgue`
   - Fill the token block of `style.css` (`--slab`, `--slab-raised`, `--slab-line`, `--bone`, `--bone-dim`, `--ghost-ink`, `--zombie-ink`, `--unproven-ink`, `--focus-ring`, `--tag-ink`, `--font-body`, `--font-display`, `--tap`, `--swing`) with values that meet the contrast rules; write the measured ratios in a comment next to each pair. Style the toe tags (tag shape, hole, string, colour by type), the slab, big numbers with the system condensed stack, the `:focus-visible` ring, the 200 ms tag swing (transform only) and a `prefers-reduced-motion` rule that removes all motion. No `transition: all`, no `outline: none` without a replacement, no gradient, no text-shadow, no web font, no emoji.
   - Responsive: two columns from 900 px (map left and sticky, tags right); one column at 390 px with the map above and scaled to the width; filters wrap; no horizontal scroll; tap targets at least 44 px (markers enlarge the hit area only); long titles and paths wrap.
   - Add the `morgue` script: `tsx src/cli/autopsy.ts . --json src/ui/public/report.json && npm run ui:build`.
