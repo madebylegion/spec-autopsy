@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Autopsy on spec save",
+      "description": "Re-run the autopsy when a requirements file is saved and list new ghosts",
+      "trigger": "PostFileSave",
+      "matcher": "\\.kiro/specs/[^/]+/requirements\\.md$",
+      "action": {
+        "type": "command",
+        "command": "npm run --silent autopsy"
+      },
+      "timeout": 120
+    }
+  ]
+}
