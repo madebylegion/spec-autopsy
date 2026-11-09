@@ -38,3 +38,23 @@ export interface ParseResult {
   requirements: Requirement[]; // sorted by file, then line
   diagnostics: Diagnostic[]; // sorted by file, then line, then code
 }
+
+export interface TaskCommitSubject {
+  spec: string | null;
+  number: number;
+  title: string;
+}
+
+export interface TaskRequirementRef {
+  id: string; // "<spec>/R<N>.<M>", or as written when not bare
+  line: number; // 1-based line of the requirements line
+}
+
+export interface TaskEntry {
+  spec: string;
+  number: number;
+  title: string;
+  file: string; // ".kiro/specs/<spec>/tasks.md"
+  line: number; // 1-based line of the task line
+  requirements: TaskRequirementRef[]; // order of appearance, no duplicate ids
+}
