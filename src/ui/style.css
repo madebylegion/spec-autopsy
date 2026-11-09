@@ -17,6 +17,13 @@
   --tag-ink on --tag-paper 11.1
   --tag-ink on --ghost-ink 7.3, on --zombie-ink 8.7, on --unproven-ink 7.6
   --tag-paper-edge on --tag-paper 3.3 (the outline of a tag)
+
+  Stamp inks (same hues as the accents, dark enough for paper), on --tag-paper:
+  --ghost-stamp 5.3, --zombie-stamp 4.8, --unproven-stamp 5.0
+  Steel panel (--steel luminance 0.031), ratios worked out by hand from the formula:
+  --bone on --steel 10.3, --bone-dim 6.2, --ghost-ink 5.0, --zombie-ink 5.9,
+  --unproven-ink 5.2, --slab-line 3.4 (edges: 3:1)
+  --steel-line, --steel-light and --steel-shadow are decoration (hairlines, edge light, shadow), no text.
 */
 :root {
   --slab: #1c1e21;
@@ -31,6 +38,13 @@
   --tag-paper: #d8c595;
   --tag-paper-edge: #7a6638;
   --tag-ink: #14110d;
+  --steel: #2f3236;
+  --steel-line: #3a3e44;
+  --steel-light: #4a4f56;
+  --steel-shadow: #0b0c0d;
+  --ghost-stamp: #8a2418;
+  --zombie-stamp: #4a5410;
+  --unproven-stamp: #7f3806;
   --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: "Arial Narrow", "Roboto Condensed", "Liberation Sans Narrow", "DejaVu Sans Condensed",
     "Helvetica Neue", Arial, sans-serif;
@@ -51,6 +65,14 @@ body {
   overflow-wrap: anywhere;
 }
 
+/* The hidden SVG that holds the stamp filter: no box, no space. */
+.defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
 :focus-visible {
   outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
@@ -58,6 +80,12 @@ body {
 
 .tag :focus-visible {
   outline-color: var(--tag-ink);
+}
+
+/* The tag itself is the focus target after a jump from the map: the ring is on the unclipped article. */
+.tag:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 
 /* Accent per type: one custom property, read by tags, stamps, numbers and filters. */
@@ -283,7 +311,9 @@ body {
 
 /*
   Body map (wide). The drawing is --map-w by --map-h units: the body (300 wide)
-  on the left and the zombie group (an HTML list) on the right.
+  on the left and the zombie group (an HTML list) on the right. The panel is
+  brushed steel: a flat fill, hairlines from an SVG pattern, an inset light edge
+  and a drop shadow. No gradient function.
 */
 .map-figure {
   margin: 0;
@@ -297,6 +327,10 @@ body {
   margin: 0 auto;
   aspect-ratio: var(--map-w) / var(--map-h);
   container-type: inline-size;
+  box-shadow:
+    inset 0 1px 0 var(--steel-light),
+    0 0 0 2px var(--steel-line),
+    0 10px 24px var(--steel-shadow);
 }
 
 .map svg {
@@ -308,9 +342,20 @@ body {
 }
 
 .map-slab {
-  fill: var(--slab-raised);
+  fill: var(--steel);
   stroke: var(--slab-line);
   stroke-width: 2;
+}
+
+.map-brush {
+  fill: url(#brush);
+  stroke: none;
+  pointer-events: none;
+}
+
+.map-brush-line {
+  stroke: var(--steel-line);
+  stroke-width: 1;
 }
 
 .map-body {
@@ -717,7 +762,12 @@ body {
   font-size: 0.875rem;
 }
 
-/* Toe tags: manila paper, a punched hole, a string, the type stamped in the accent colour. */
+/*
+  Toe tags: manila paper with a cut corner, a punched eyelet with a string loop,
+  and the type rubber-stamped in a dark ink. Structure:
+  .tag (focus and outline target, not clipped) > .tag-shape (paper-edge colour)
+  > .tag-sheet (paper, 1.5px inside the shape so an edge shows on every side).
+*/
 .tags {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -736,31 +786,29 @@ body {
 .tag {
   position: relative;
   height: 100%;
-  padding: 12px 16px;
-  border: 1px solid var(--tag-paper-edge);
-  border-top: 8px solid var(--accent);
-  border-radius: 30px 6px 6px 6px;
-  background: var(--tag-paper);
   color: var(--tag-ink);
   transform-origin: 22px 0;
 }
 
 /*
-  The string: a closed loop (a tall ring) that hangs above the card and passes
-  through the hole. The hole centre is 23px from the left and 26px from the top
-  of the padding box, so the ring ends just below that centre and its lower arc
-  sits inside the hole.
+  The clip polygons cut the top-right corner and leave a notch above the left
+  70px (where the string hangs), so the clip never cuts the string.
 */
-.tag::before {
-  content: "";
-  position: absolute;
-  top: -22px;
-  left: 17px;
-  width: 12px;
-  height: 50px;
-  border: 2px solid var(--bone-dim);
-  border-radius: 50%;
-  pointer-events: none;
+.tag-shape {
+  display: flex;
+  height: 100%;
+  background: var(--tag-paper-edge);
+  clip-path: polygon(0 -26px, 70px -26px, 70px 0, calc(100% - 26px) 0, 100% 26px, 100% 100%, 0 100%);
+}
+
+.tag-sheet {
+  flex: 1;
+  min-width: 0;
+  margin: 1.5px;
+  padding: 10px 16px 12px;
+  border-top: 8px solid var(--accent);
+  background: var(--tag-paper);
+  clip-path: polygon(0 -26px, 68px -26px, 68px 0, calc(100% - 25px) 0, 100% 25px, 100% 100%, 0 100%);
 }
 
 .tag--selected {
@@ -769,16 +817,25 @@ body {
   animation: tag-swing var(--swing) ease-out;
 }
 
-.tag-top {
-  display: flex;
-  flex-wrap: wrap;
+/* The eyelet column is reserved, so nothing is drawn over the id or the stamp. */
+.tag-head {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
   align-items: center;
   gap: 4px 10px;
   min-height: 28px;
 }
 
+.tag-eyelet {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 28px;
+}
+
 .tag-hole {
-  flex: none;
+  display: block;
   width: 14px;
   height: 14px;
   border: 2px solid var(--tag-paper-edge);
@@ -786,13 +843,31 @@ body {
   background: var(--slab);
 }
 
+/* 24 x 56 units; the lower end of the loop is the centre of the hole (14px down, 28px across). */
+.tag-string {
+  position: absolute;
+  top: -42px;
+  left: 16px;
+  width: 24px;
+  height: 56px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.tag-string-line {
+  fill: none;
+  stroke: var(--bone-dim);
+  stroke-width: 2;
+}
+
 .tag-id {
+  min-width: 0;
   font-family: var(--font-display);
   font-size: 1.125rem;
   font-weight: 700;
 }
 
-/* The stamp: type name in a condensed uppercase face on the accent colour. */
+/* The detail panel stamp: type name in a condensed uppercase face on the accent colour. */
 .tag-type {
   margin-left: auto;
   padding: 0 10px;
@@ -803,6 +878,39 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
+}
+
+/* The tag stamp: ink only, a rough double frame, tilted. The filter touches the frame, not the text. */
+.tag--ghost .tag-type {
+  --stamp: var(--ghost-stamp);
+}
+
+.tag--zombie .tag-type {
+  --stamp: var(--zombie-stamp);
+}
+
+.tag--unproven .tag-type {
+  --stamp: var(--unproven-stamp);
+}
+
+.tag .tag-type {
+  position: relative;
+  margin-left: 0;
+  padding: 2px 12px;
+  background: transparent;
+  color: var(--stamp);
+  font-size: 0.875rem;
+  letter-spacing: 0.12em;
+  transform: rotate(-2.5deg);
+}
+
+.tag .tag-type::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 3px double var(--stamp);
+  filter: url(#stamp-rough);
+  pointer-events: none;
 }
 
 /* The requirement text: 4 lines on a wide screen, 5 on a phone; the line clamp decides the cut. */

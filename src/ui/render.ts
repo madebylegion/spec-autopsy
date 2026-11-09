@@ -31,6 +31,8 @@ let phoneMapOpen = false;
 /** A check mark in text (U+2713, a text symbol and not an emoji) shows that a toggle is on. */
 const CHECK = "\u2713";
 
+const SVG_NS = "http://www.w3.org/2000/svg";
+
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   className?: string,
@@ -129,12 +131,39 @@ function metaRow(label: string, value: Node | string): HTMLElement {
   return row;
 }
 
+/**
+ * The string loop: a tall closed loop (24 x 56 units) whose lower end sits at the
+ * centre of the hole. It hangs above the tag and passes through the eyelet; no text is there.
+ */
+function stringLoop(): SVGSVGElement {
+  const drawing = document.createElementNS(SVG_NS, "svg");
+  drawing.setAttribute("class", "tag-string");
+  drawing.setAttribute("viewBox", "0 0 24 56");
+  drawing.setAttribute("aria-hidden", "true");
+  drawing.setAttribute("focusable", "false");
+  const path = document.createElementNS(SVG_NS, "path");
+  path.setAttribute("class", "tag-string-line");
+  path.setAttribute("d", "M12 2 C 3 2 3 56 12 56 C 21 56 21 2 12 2 Z");
+  drawing.append(path);
+  return drawing;
+}
+
+/**
+ * li > article.tag (outline target, not clipped) > .tag-shape (paper edge, cut corner)
+ * > .tag-sheet (paper) > .tag-head (eyelet, id, stamp), title, buttons, meta.
+ */
 function toeTag(finding: Finding, key: string, selected: boolean, onSelect: (key: string) => void): HTMLElement {
   const text = cardText(finding);
   const item = el("li", "tag-item");
   const card = el("article", `tag tag--${finding.type}${selected ? " tag--selected" : ""}`);
-  const top = el("div", "tag-top");
-  top.append(el("span", "tag-hole"), el("span", "tag-id", text.id), el("span", "tag-type", tagLabel(finding.type)));
+  card.tabIndex = -1;
+  card.dataset["tagKey"] = key;
+  const shape = el("div", "tag-shape");
+  const sheet = el("div", "tag-sheet");
+  const head = el("div", "tag-head");
+  const eyelet = el("div", "tag-eyelet");
+  eyelet.append(el("span", "tag-hole"), stringLoop());
+  head.append(eyelet, el("span", "tag-id", text.id), el("span", "tag-type", tagLabel(finding.type)));
   const title = el("p", "tag-title", text.clamped);
   const open = el("button", "link-button", "Open details");
   open.type = "button";
@@ -147,7 +176,9 @@ function toeTag(finding: Finding, key: string, selected: boolean, onSelect: (key
     metaRow("Confidence", text.confidence),
     metaRow("Cause of death", text.cause),
   );
-  card.append(top, title, open, meta);
+  sheet.append(head, title, open, meta);
+  shape.append(sheet);
+  card.append(shape);
   item.append(card);
   return item;
 }

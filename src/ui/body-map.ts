@@ -61,7 +61,7 @@ const PARTS: readonly Part[] = [
   { region: "right-leg", tag: "rect", attrs: { x: "154", y: "340", width: "48", height: "260", rx: "12" } },
 ];
 
-/** The full silhouette on its slab. The slab frame is drawn inside the viewBox so it is never cut. */
+/** The full silhouette on its steel slab. The slab frame is drawn inside the viewBox so it is never cut. */
 function silhouette(states: readonly RegionState[]): SVGSVGElement {
   const drawing = svg("svg", {
     viewBox: `0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`,
@@ -69,13 +69,13 @@ function silhouette(states: readonly RegionState[]): SVGSVGElement {
     "aria-hidden": "true",
     focusable: "false",
   });
-  drawing.append(
-    svg(
-      "rect",
-      { x: "2", y: "2", width: String(MAP_WIDTH - 4), height: String(MAP_HEIGHT - 4), rx: "8" },
-      "map-slab",
-    ),
-  );
+  // Brushed steel: hairlines from a pattern, no gradient. The colours come from CSS classes.
+  const defs = svg("defs", {});
+  const brush = svg("pattern", { id: "brush", width: "6", height: "3", patternUnits: "userSpaceOnUse" });
+  brush.append(svg("line", { x1: "0", y1: "1.5", x2: "6", y2: "1.5" }, "map-brush-line"));
+  defs.append(brush);
+  const slabAttrs = { x: "2", y: "2", width: String(MAP_WIDTH - 4), height: String(MAP_HEIGHT - 4), rx: "8" };
+  drawing.append(defs, svg("rect", slabAttrs, "map-slab"), svg("rect", slabAttrs, "map-brush"));
   for (const part of PARTS) {
     const state = states.find((s) => s.region === part.region)?.state ?? "unused";
     const node = svg(
