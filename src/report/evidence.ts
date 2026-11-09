@@ -1,0 +1,52 @@
+import type { RequirementEntry, Zombie } from "../linker/index.js";
+
+const MAX_LINKED = 5;
+
+function sha7(sha: string): string {
+  return sha.slice(0, 7);
+}
+
+function score2(score: number): string {
+  return score.toFixed(2);
+}
+
+export function ghostEvidence(entry: RequirementEntry): string[] {
+  const out = [`no symbol or test links to ${entry.id} by tag, commit or word overlap`];
+  const near = entry.nearMiss;
+  if (near !== undefined && near.symbol !== null) {
+    out.push(`closest name: ${near.file}#${near.symbol} shares words (score ${score2(near.score)})`);
+  }
+  return out;
+}
+
+export function unprovenEvidence(entry: RequirementEntry): string[] {
+  const out = ["no test case links to this requirement"];
+  const shown = entry.codeLinks.slice(0, MAX_LINKED);
+  for (const link of shown) {
+    let how: string;
+    if (link.method === "commit") {
+      how = link.commit === undefined ? "commit" : `commit ${sha7(link.commit)}`;
+    } else if (link.method === "tag") {
+      how = "tag";
+    } else {
+      how = `overlap ${score2(link.score)}`;
+    }
+    out.push(`linked code: ${link.file}#${link.symbol} (${how})`);
+  }
+  const more = entry.codeLinks.length - shown.length;
+  if (more > 0) out.push(`and ${more} more`);
+  return out;
+}
+
+export function zombieEvidence(zombie: Zombie): string[] {
+  const exportedKind = zombie.kind === "function" || zombie.kind === "class" || zombie.kind === "const";
+  const cause = exportedKind
+    ? `exported ${zombie.kind} never referenced by a requirement`
+    : `${zombie.kind} ${zombie.symbol} is never referenced by a requirement`;
+  const out = [cause];
+  const near = zombie.nearMiss;
+  if (near !== undefined && near.requirementId !== null) {
+    out.push(`closest requirement: ${near.requirementId} shares words (score ${score2(near.score)})`);
+  }
+  return out;
+}

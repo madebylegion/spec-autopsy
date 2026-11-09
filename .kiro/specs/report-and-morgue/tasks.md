@@ -2,7 +2,7 @@
 
 Each task is small enough for one call and ends with its own tests. Tests live in `tests/report/`, `tests/ui/` and `tests/cli/`. Run tests with `npx vitest --run` and type check with `npx tsc --noEmit` (and `npx tsc --noEmit -p src/ui/tsconfig.ui.json` once it exists). Never change THRESHOLD or any `expected.json`. Do not open `tests/fixtures/heldout/` or `tests/fixtures/blind3/`. Dependency changes: write package.json, then ask the human to run `npm install`. Do not run dev-server or watch commands.
 
-- [ ] 1. Report organ: types, buildReport, validateReport, confidence, near miss
+- [x] 1. Report organ: types, buildReport, validateReport, confidence, near miss
   - Linker: add `NearMiss`, `RequirementEntry.nearMiss?`, `Zombie.nearMiss?` and `NEAR_MISS = 0.4` as in design.md; set the field in `link` only when the best score is at least `NEAR_MISS` and the pair is not linked; export the types from `src/linker/index.ts`. Add `tests/linker/near-miss.test.ts` on tiny hand-made inputs: ghost near miss, zombie near miss, below 0.4 leaves the field out, tie order, determinism. Existing linker tests and `expected.json` stay unchanged; if one breaks, report it.
   - Create `src/report/` (`types.ts`, `confidence.ts`, `evidence.ts`, `build-report.ts`, `validate-report.ts`, `index.ts`) as in design.md. No `node:` imports anywhere in `src/report/` (the UI bundles `validate-report.ts`); the base name of the root is taken with a plain string split on `/` and `\`.
   - Add `tests/report/build-report.test.ts` on a hand-made body map: every finding has type, requirementId (null only for zombies), file, line >= 1, at least one evidence sentence, a confidence in 0..1 with the level the table gives (one case per table row); finding order; top-level key order; summary and `bySpec` counts; links keep `method` and `commit`; determinism (two builds, same string); no absolute path in the JSON string (root given as an absolute path).
@@ -38,3 +38,4 @@ Each task is small enough for one call and ends with its own tests. Tests live i
   - Add `tests/ui/style-rules.test.ts` (reads `src/ui/style.css` as text, no DOM): the token names exist at the top, no `transition: all`, no `outline: none` without `:focus-visible` rules, a `prefers-reduced-motion` block exists, no `@import` or `url(http`, and a contrast function checks the token pairs listed in the file against 4.5:1 and 3:1.
   - After this task the orchestrator runs `npm run ui:build` and takes screenshots at 1440x900 and 390x844.
   - _Requirements: report-and-morgue/R10.1, report-and-morgue/R10.2, report-and-morgue/R10.3, report-and-morgue/R10.4, report-and-morgue/R10.5, report-and-morgue/R10.6, report-and-morgue/R11.1, report-and-morgue/R11.2, report-and-morgue/R11.3, report-and-morgue/R12.2_
+

@@ -34,6 +34,18 @@ export interface LastCommit {
   author: string;
 }
 
+/** The best unlinked pair of a ghost or a zombie that still shares words. */
+export interface NearMiss {
+  /** The other side of the near miss; set on a zombie. */
+  requirementId: string | null;
+  /** The other side of the near miss; set on a ghost. */
+  symbol: string | null;
+  file: string;
+  line: number;
+  /** overlapScore, at least NEAR_MISS and not a link. */
+  score: number;
+}
+
 export interface RequirementEntry {
   id: string;
   status: RequirementStatus;
@@ -42,6 +54,8 @@ export interface RequirementEntry {
   codeLinks: CodeLink[];
   testLinks: TestLink[];
   lastCommit: LastCommit | null;
+  /** Ghosts only, and only when a near miss exists. */
+  nearMiss?: NearMiss;
 }
 
 export interface Zombie {
@@ -49,6 +63,8 @@ export interface Zombie {
   kind: ZombieKind;
   file: string;
   line: number;
+  /** Only when a near miss exists. */
+  nearMiss?: NearMiss;
 }
 
 export interface BodyMapDiagnostic {

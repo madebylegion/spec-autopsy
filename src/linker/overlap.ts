@@ -11,6 +11,12 @@ import type { Requirement } from "../parser/index.js";
  */
 export const THRESHOLD = 0.5;
 
+/**
+ * Lowest overlap score that is recorded as a near miss: a ghost and a symbol
+ * (or a zombie and a requirement) that share words but are not linked.
+ */
+export const NEAR_MISS = 0.4;
+
 export const STOPWORDS: ReadonlySet<string> = new Set([
   "the", "a", "an", "of", "to", "and", "or", "in", "on", "for", "with",
   "shall", "when", "then", "if", "while", "where", "is", "are", "be", "it",

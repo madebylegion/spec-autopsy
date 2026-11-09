@@ -2,15 +2,24 @@ import type { CodeIndex, FileIndex } from "../indexer/index.js";
 import type { Diagnostic, Requirement, TaskEntry } from "../parser/index.js";
 import { classifyRequirement, findZombies, symbolKey } from "./classify.js";
 import { commitHits, resolveTaskCommits, unknownTaskRequirements } from "./commit-links.js";
-import { overlapScore, overlaps, requirementTokens, symbolTokens, tokenise } from "./overlap.js";
+import {
+  NEAR_MISS,
+  overlapScore,
+  overlaps,
+  requirementTokens,
+  symbolTokens,
+  tokenise,
+} from "./overlap.js";
 import { tagsInFile } from "./tags.js";
 import type {
   BodyMap,
   BodyMapDiagnostic,
   CodeLink,
   LastCommit,
+  NearMiss,
   RequirementEntry,
   TestLink,
+  Zombie,
 } from "./types.js";
 
 function compareCodeUnits(a: string, b: string): number {
@@ -68,6 +77,65 @@ function compareDiagnostics(a: BodyMapDiagnostic, b: BodyMapDiagnostic): number 
     compareCodeUnits(a.message, b.message) ||
     compareCodeUnits(a.source, b.source)
   );
+}
+
+/** One candidate for a near miss: the other side of the pair. */
+interface Candidate {
+  score: number;
+  file: string;
+  line: number;
+  name: string;
+}
+
+/** True when `a` beats `b`: higher score, then lowest file, line, name by code unit. */
+function beats(a: Candidate, b: Candidate): boolean {
+  if (a.score !== b.score) return a.score > b.score;
+  return (
+    (compareCodeUnits(a.file, b.file) || a.line - b.line || compareCodeUnits(a.name, b.name)) < 0
+  );
+}
+
+/**
+ * The best near miss of a ghost: the non-test symbol whose name shares the
+ * most words with the requirement. A ghost has no links, so no pair is linked.
+ */
+function ghostNearMiss(req: Requirement, index: CodeIndex): NearMiss | undefined {
+  const reqTokens = requirementTokens(req);
+  let best: Candidate | null = null;
+  for (const file of index.files) {
+    if (file.isTest) continue;
+    for (const symbol of file.symbols) {
+      const candidate: Candidate = {
+        score: overlapScore(reqTokens, symbolTokens(symbol.name)),
+        file: file.path,
+        line: symbol.startLine,
+        name: symbol.name,
+      };
+      if (best === null || beats(candidate, best)) best = candidate;
+    }
+  }
+  if (best === null || best.score < NEAR_MISS) return undefined;
+  return { requirementId: null, symbol: best.name, file: best.file, line: best.line, score: best.score };
+}
+
+/**
+ * The best near miss of a zombie: the requirement whose words overlap its
+ * name the most. A zombie is linked to nothing, so no pair is linked.
+ */
+function zombieNearMiss(zombie: Zombie, works: readonly Work[]): NearMiss | undefined {
+  const tokens = symbolTokens(zombie.symbol);
+  let best: Candidate | null = null;
+  for (const work of works) {
+    const candidate: Candidate = {
+      score: overlapScore(requirementTokens(work.req), tokens),
+      file: work.req.file,
+      line: work.req.line,
+      name: work.req.id,
+    };
+    if (best === null || beats(candidate, best)) best = candidate;
+  }
+  if (best === null || best.score < NEAR_MISS) return undefined;
+  return { requirementId: best.name, symbol: null, file: best.file, line: best.line, score: best.score };
 }
 
 /**
@@ -238,7 +306,7 @@ export function link(
       (a, b) =>
         compareCodeUnits(a.file, b.file) || a.line - b.line || compareCodeUnits(a.title, b.title),
     );
-    return {
+    const entry: RequirementEntry = {
       id: work.req.id,
       status: classifyRequirement(codeLinks, testLinks),
       file: work.req.file,
@@ -247,9 +315,17 @@ export function link(
       testLinks,
       lastCommit: lastCommitOf(codeLinks, filesByPath),
     };
+    if (entry.status === "ghost") {
+      const nearMiss = ghostNearMiss(work.req, index);
+      if (nearMiss !== undefined) entry.nearMiss = nearMiss;
+    }
+    return entry;
   });
 
-  const zombies = findZombies(index, linkedSymbols);
+  const zombies = findZombies(index, linkedSymbols).map((zombie): Zombie => {
+    const nearMiss = zombieNearMiss(zombie, works);
+    return nearMiss === undefined ? zombie : { ...zombie, nearMiss };
+  });
 
   const diagnostics: BodyMapDiagnostic[] = [
     ...parserDiagnostics.map(

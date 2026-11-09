@@ -9,6 +9,7 @@ export { commitHits, ownerAt, resolveTaskCommits, unknownTaskRequirements } from
 export type { CommitHit } from "./commit-links.js";
 export { link } from "./link.js";
 export {
+  NEAR_MISS,
   overlapScore,
   overlaps,
   requirementTokens,
@@ -27,6 +28,7 @@ export type {
   CodeLink,
   LastCommit,
   LinkMethod,
+  NearMiss,
   RequirementEntry,
   RequirementStatus,
   TagHit,
