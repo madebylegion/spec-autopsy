@@ -20,7 +20,7 @@ Each task is small enough for one call. Tests live in `tests/indexer/`; fixtures
   - Add `tests/indexer/py-extractor.test.ts` with example tests: kinds, `Class.method`, decorator lines in the range, `__all__` filtering, underscore rule, `__all__` that is not a list of strings being ignored.
   - _Requirements: indexer/R4.1, indexer/R4.2, indexer/R4.3, indexer/R4.4, indexer/R4.5, indexer/R4.6, indexer/R4.7, indexer/R4.8_
 
-- [ ] 4. File walker, isTest rule, comments and test cases
+- [x] 4. File walker, isTest rule, comments and test cases
   - Create `src/indexer/walker.ts` (`walkRepo`, `isTestPath`, skip list, sorted, `/` paths, `unreadable-directory` diagnostics) and `src/indexer/comments.ts` (`extractComments`, `extractTestCases`).
   - Add a test file `tests/fixtures/ts-basic/tests/math.test.ts` with `describe`, `it` and `test` titles, plus one `it.each` and one `it(variable, ...)` that must be ignored.
   - Add `tests/indexer/walker.test.ts` and `tests/indexer/comments.test.ts`: skipped directories, extension filter, sorted order, every `isTest` rule, `//`, block and `#` comments, no comments from inside strings, titles and lines for TS and Python, empty test cases for non-test files, an unreadable directory.
