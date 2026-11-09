@@ -1,6 +1,7 @@
 import type { CodeIndex, FileIndex } from "../indexer/index.js";
-import type { Diagnostic, Requirement } from "../parser/index.js";
+import type { Diagnostic, Requirement, TaskEntry } from "../parser/index.js";
 import { classifyRequirement, findZombies, symbolKey } from "./classify.js";
+import { commitHits, resolveTaskCommits, unknownTaskRequirements } from "./commit-links.js";
 import { overlapScore, overlaps, requirementTokens, symbolTokens, tokenise } from "./overlap.js";
 import { tagsInFile } from "./tags.js";
 import type {
@@ -71,13 +72,14 @@ function compareDiagnostics(a: BodyMapDiagnostic, b: BodyMapDiagnostic): number 
 
 /**
  * Joins requirements, the code index and the tests into a body map.
- * Pure and deterministic: tags first, then token overlap for requirements
- * without an explicit link on that side, then classification.
+ * Pure and deterministic: commit links first, then tags, then token overlap
+ * for requirements without an explicit link on that side, then classification.
  */
 export function link(
   requirements: readonly Requirement[],
   index: CodeIndex,
   parserDiagnostics: readonly Diagnostic[] = [],
+  tasks: readonly TaskEntry[] = [],
 ): BodyMap {
   const works: Work[] = requirements.map((req) => ({
     req,
@@ -87,7 +89,7 @@ export function link(
     explicitTest: false,
   }));
 
-  // Tags attach to the first requirement that has the id.
+  // Tags and commit links attach to the first requirement that has the id.
   const firstById = new Map<string, Work>();
   for (const work of works) {
     if (!firstById.has(work.req.id)) firstById.set(work.req.id, work);
@@ -95,6 +97,44 @@ export function link(
 
   const linkerDiagnostics: BodyMapDiagnostic[] = [];
   const linkedSymbols = new Set<string>();
+
+  // 0. Commit links: commit, then task, then requirement ids, then the lines it owns.
+  linkerDiagnostics.push(...unknownTaskRequirements(tasks, new Set(firstById.keys())));
+  const resolved = resolveTaskCommits(index.kiroCommits, tasks);
+  for (const hit of commitHits(index, resolved)) {
+    for (const ref of hit.task.requirements) {
+      const work = firstById.get(ref.id);
+      if (work === undefined) continue;
+      if (hit.kind === "symbol") {
+        const key = symbolKey(hit.file, hit.symbol.startLine, hit.symbol.name);
+        work.explicitCode = true;
+        linkedSymbols.add(key);
+        if (!work.code.has(key)) {
+          work.code.set(key, {
+            symbol: hit.symbol.name,
+            file: hit.file,
+            startLine: hit.symbol.startLine,
+            method: "commit",
+            score: 1,
+            commit: hit.sha,
+          });
+        }
+      } else {
+        const key = testKey(hit.file, hit.testCase.line, hit.testCase.title);
+        work.explicitTest = true;
+        if (!work.tests.has(key)) {
+          work.tests.set(key, {
+            title: hit.testCase.title,
+            file: hit.file,
+            line: hit.testCase.line,
+            method: "commit",
+            score: 1,
+            commit: hit.sha,
+          });
+        }
+      }
+    }
+  }
 
   // 1. Explicit tags.
   for (const file of index.files) {

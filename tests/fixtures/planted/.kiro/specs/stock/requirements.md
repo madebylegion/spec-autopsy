@@ -26,3 +26,12 @@ Stock keeping rules of the planted fixture. Not part of the real project.
 1. WHEN stock runs low, the reorder service SHALL send an alert to the purchasing team.
 2. WHEN a purchase order is approved, the purchasing module SHALL compute the supplier lead time.
 3. WHEN a shipment arrives, the receiving dock SHALL update the on hand quantity.
+
+### Requirement 3: Receiving
+
+**User Story:** As a dock worker, I want pallets labelled and damage claimed, so that nothing gets lost.
+
+#### Acceptance Criteria
+
+1. WHEN a pallet is scanned at the gate, the sticker printer SHALL print a batch barcode.
+2. WHEN a pallet is damaged, the claims desk SHALL open a claim file.

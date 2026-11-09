@@ -37,3 +37,11 @@ export function legacyCsvExport(rows: string[][]): string {
 function roundToUnit(value: number): number {
   return Math.round(value);
 }
+
+export function sealCrate(code: string): string {
+  return `S-${code}`;
+}
+
+export function vouchTally(counts: number[]): number {
+  return counts.reduce((sum, count) => sum + count, 0);
+}

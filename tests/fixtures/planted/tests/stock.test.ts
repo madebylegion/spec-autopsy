@@ -18,3 +18,15 @@ it("rejects negative quantity entry", () => {
 it("stock/R2.2 supplier lead time", () => {
   computeSupplierLeadTime([1, 2]);
 });
+
+import { sealCrate } from "../src/stock.js";
+
+it("sealed crates carry a prefix", () => {
+  sealCrate("a");
+});
+
+import { vouchTally } from "../src/stock.js";
+
+it("voucher counts add up", () => {
+  vouchTally([1, 2]);
+});

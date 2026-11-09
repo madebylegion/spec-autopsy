@@ -28,3 +28,7 @@ export const OrderDebugFlags = { verbose: false };
 function roundMoney(value: number): number {
   return Math.round(value * 100) / 100;
 }
+
+export function quillMemo(note: string): string {
+  return `M-${note}`;
+}

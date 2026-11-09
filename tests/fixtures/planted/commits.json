@@ -1,0 +1,89 @@
+[
+  {
+    "message": "kiro: stock task 1 Record adjustments and validate quantities",
+    "files": [
+      { "path": "src/stock.ts", "lines": [[1, 11]] },
+      { "path": "tests/stock.test.ts", "lines": [[1, 17]] }
+    ]
+  },
+  {
+    "message": "kiro: orders task 1 Calculate order totals",
+    "files": [
+      { "path": "src/orders.ts", "lines": [[1, 7]] },
+      { "path": "tests/orders.test.ts", "lines": [[1, 8]] }
+    ]
+  },
+  {
+    "message": "kiro: stock task 2 Raise the low stock flag",
+    "files": [{ "path": "src/stock.ts", "lines": [[12, 16]] }]
+  },
+  {
+    "message": "kiro: orders task 2 Generate tracking labels",
+    "files": [
+      { "path": "src/shipping.py", "lines": [[1, 7]] },
+      "tests/test_shipping.py"
+    ]
+  },
+  {
+    "message": "kiro: stock task 3 Compute supplier lead time",
+    "files": [
+      { "path": "src/stock.ts", "lines": [[17, 20]] },
+      { "path": "tests/stock.test.ts", "lines": [[18, 20]] }
+    ]
+  },
+  {
+    "message": "kiro: orders task 3 Keep the order open on declined payment",
+    "files": [
+      { "path": "src/orders.ts", "lines": [[8, 12]] },
+      { "path": "tests/orders.test.ts", "lines": [[9, 11]] }
+    ]
+  },
+  {
+    "message": "kiro: stock task 4 Update on hand quantity",
+    "files": [{ "path": "src/stock.ts", "lines": [[21, 24]] }]
+  },
+  {
+    "message": "chore: add reports, reasons, csv export and rounding helper",
+    "files": [{ "path": "src/stock.ts", "lines": [[25, 39]] }]
+  },
+  {
+    "message": "kiro: orders task 4 Track order holds",
+    "files": [{ "path": "src/orders.ts", "lines": [[13, 21]] }]
+  },
+  {
+    "message": "kiro: orders task 5 Apply coupon discounts",
+    "files": [{ "path": "src/orders.ts", "lines": [[22, 25]] }]
+  },
+  {
+    "message": "kiro: orders task 6 Add debug switches",
+    "files": [{ "path": "src/orders.ts", "lines": [[26, 27]] }]
+  },
+  {
+    "message": "chore: audit export and money rounding",
+    "files": [
+      { "path": "src/shipping.py", "lines": [[8, 13]] },
+      { "path": "src/orders.ts", "lines": [[28, 30]] }
+    ]
+  },
+  {
+    "message": "kiro: stock task 5 Print pallet barcodes",
+    "files": [
+      { "path": "src/stock.ts", "lines": [[40, 43]] },
+      { "path": "tests/stock.test.ts", "lines": [[21, 26]] }
+    ]
+  },
+  {
+    "message": "kiro: orders task 7 Issue refund credit notes",
+    "files": [
+      { "path": "src/orders.ts", "lines": [[31, 34]] },
+      { "path": "tests/orders.test.ts", "lines": [[12, 17]] }
+    ]
+  },
+  {
+    "message": "kiro: stock task 6 Open damage claims",
+    "files": [
+      { "path": "src/stock.ts", "lines": [[44, 47]] },
+      { "path": "tests/stock.test.ts", "lines": [[27, 32]] }
+    ]
+  }
+]

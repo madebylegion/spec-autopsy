@@ -1,10 +1,12 @@
 import { indexRepo } from "../indexer/index.js";
-import { parseProject } from "../parser/index.js";
+import { parseProject, parseTasksProject } from "../parser/index.js";
 import { link } from "./link.js";
 import type { BodyMap } from "./types.js";
 
 export { scoreAgainstTruth } from "./accuracy.js";
 export { classifyRequirement, findZombies, isZombieCandidate, symbolKey } from "./classify.js";
+export { commitHits, ownerAt, resolveTaskCommits, unknownTaskRequirements } from "./commit-links.js";
+export type { CommitHit } from "./commit-links.js";
 export { link } from "./link.js";
 export {
   overlapScore,
@@ -36,15 +38,16 @@ export type {
 } from "./types.js";
 
 /**
- * Parses the specs and indexes the code under `root`, then links them.
- * Never throws: an unexpected error gives an empty body map with one
+ * Parses the specs and tasks and indexes the code under `root`, then links
+ * them. Never throws: an unexpected error gives an empty body map with one
  * `link-failed` diagnostic.
  */
 export async function linkProject(root: string): Promise<BodyMap> {
   try {
     const parsed = await parseProject(root);
+    const tasks = await parseTasksProject(root);
     const index = await indexRepo(root);
-    return link(parsed.requirements, index, parsed.diagnostics);
+    return link(parsed.requirements, index, parsed.diagnostics, tasks);
   } catch (error) {
     return {
       root,

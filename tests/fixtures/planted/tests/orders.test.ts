@@ -9,3 +9,9 @@ it("orders/R1.1 totals an order", () => {
 it("payment declined keeps order open", () => {
   onPaymentFailure("o1");
 });
+
+import { quillMemo } from "../src/orders.js";
+
+it("memo carries the amount", () => {
+  quillMemo("a");
+});

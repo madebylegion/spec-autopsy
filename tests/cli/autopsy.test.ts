@@ -1,9 +1,9 @@
-import { appendFile, cp, mkdtemp, readFile, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { appendFile, readFile, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { runAutopsy } from "../../src/cli/autopsy.js";
+import { buildFixtureRepo } from "../helpers/build-fixture-repo.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const planted = join(here, "..", "fixtures", "planted");
@@ -25,9 +25,8 @@ describe("autopsy CLI", () => {
   let dir: string;
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "autopsy-"));
-    await cp(planted, dir, { recursive: true });
-  });
+    dir = await buildFixtureRepo(planted);
+  }, 60_000);
 
   afterEach(async () => {
     await rm(dir, { recursive: true, force: true });

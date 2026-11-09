@@ -1,13 +1,29 @@
-import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { readFile, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { linkProject } from "../../src/linker/index.js";
 import { scoreAgainstTruth } from "../../src/linker/accuracy.js";
 import type { AccuracyReport, BodyMap, TruthEntry } from "../../src/linker/types.js";
+import { buildFixtureRepo } from "../helpers/build-fixture-repo.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const CLASSES = ["ghost", "zombie", "unproven", "overall"] as const;
+
+const tempDirs: string[] = [];
+
+afterAll(async () => {
+  for (const dir of tempDirs) await rm(dir, { recursive: true, force: true });
+});
+
+/** Links the built temporary repository when the fixture has a commits.json, the directory itself otherwise. */
+async function linkFixture(dir: string): Promise<BodyMap> {
+  if (!existsSync(join(dir, "commits.json"))) return linkProject(dir);
+  const built = await buildFixtureRepo(dir);
+  tempDirs.push(built);
+  return linkProject(built);
+}
 
 async function loadTruth(root: string): Promise<TruthEntry[]> {
   const raw: unknown = JSON.parse(await readFile(join(root, "expected.json"), "utf8"));
@@ -47,19 +63,19 @@ function foundEntries(map: BodyMap): TruthEntry[] {
 describe("linker accuracy on the planted fixture", () => {
   it("reports sane numbers and overall precision and recall of at least 0.8", async () => {
     const root = join(here, "..", "fixtures", "planted");
-    const map = await linkProject(root);
+    const map = await linkFixture(root);
     const report = scoreAgainstTruth(map, await loadTruth(root));
     printReport("planted", report);
     expectSane(report);
     expect(report.overall.precision).toBeGreaterThanOrEqual(0.8);
     expect(report.overall.recall).toBeGreaterThanOrEqual(0.8);
-  }, 60_000);
+  }, 120_000);
 });
 
 describe("linker accuracy on the held-out fixture", () => {
   it("reports sane numbers (no floor is asserted)", async () => {
     const root = join(here, "..", "fixtures", "heldout");
-    const map = await linkProject(root);
+    const map = await linkFixture(root);
     const truth = await loadTruth(root);
     const report = scoreAgainstTruth(map, truth);
     printReport("heldout", report);
@@ -75,5 +91,5 @@ describe("linker accuracy on the held-out fixture", () => {
     for (const k of misses) console.log(`linker accuracy [heldout] miss: ${k}`);
 
     expectSane(report);
-  }, 60_000);
+  }, 120_000);
 });

@@ -1,6 +1,6 @@
 import type { Symbol as CodeSymbol, SymbolKind, TestCase } from "../indexer/index.js";
 
-export type LinkMethod = "tag" | "overlap";
+export type LinkMethod = "commit" | "tag" | "overlap";
 export type RequirementStatus = "ghost" | "unproven" | "proven";
 // Kept as a subset of SymbolKind (methods are never zombie candidates).
 export type ZombieKind = Extract<
@@ -14,6 +14,8 @@ export interface CodeLink {
   startLine: number;
   method: LinkMethod;
   score: number;
+  /** SHA of the task commit; present only on commit links. */
+  commit?: string;
 }
 
 export interface TestLink {
@@ -22,6 +24,8 @@ export interface TestLink {
   line: number;
   method: LinkMethod;
   score: number;
+  /** SHA of the task commit; present only on commit links. */
+  commit?: string;
 }
 
 export interface LastCommit {
@@ -49,7 +53,7 @@ export interface Zombie {
 
 export interface BodyMapDiagnostic {
   source: "parser" | "indexer" | "linker";
-  code: string; // linker codes: "unknown-requirement-tag", "link-failed"
+  code: string; // linker codes: "unknown-requirement-tag", "unknown-task-requirement", "link-failed"
   message: string;
   file: string;
   line: number | null; // null for index diagnostics
