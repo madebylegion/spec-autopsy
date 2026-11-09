@@ -1,0 +1,15 @@
+[
+  { "class": "ghost", "key": "stock/R1.4" },
+  { "class": "ghost", "key": "stock/R2.1" },
+  { "class": "ghost", "key": "orders/R2.2" },
+  { "class": "ghost", "key": "orders/R2.3" },
+  { "class": "unproven", "key": "stock/R1.3" },
+  { "class": "unproven", "key": "stock/R2.3" },
+  { "class": "unproven", "key": "orders/R1.4" },
+  { "class": "unproven", "key": "orders/R2.1" },
+  { "class": "zombie", "key": "src/stock.ts#buildReorderAlertSummaryReport" },
+  { "class": "zombie", "key": "src/stock.ts#recordStockAdjustmentReasons" },
+  { "class": "zombie", "key": "src/stock.ts#legacyCsvExport" },
+  { "class": "zombie", "key": "src/orders.ts#OrderDebugFlags" },
+  { "class": "zombie", "key": "src/shipping.py#export_audit_blob" }
+]
