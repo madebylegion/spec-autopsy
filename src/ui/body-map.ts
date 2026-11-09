@@ -116,6 +116,7 @@ function markerButton(marker: MapMarker, options: BodyMapOptions): HTMLButtonEle
   }
   button.setAttribute("aria-label", marker.name);
   button.dataset["focusId"] = `marker:${marker.key}`;
+  button.dataset["markerKey"] = marker.key;
   button.style.left = `${(marker.x / MAP_WIDTH) * 100}%`;
   button.style.top = `${(marker.y / MAP_HEIGHT) * 100}%`;
   button.style.setProperty("--dot-units", String(Math.max(4, Math.min(marker.cell * 0.6, 20))));
@@ -260,6 +261,7 @@ function phoneMarker(marker: MapMarker, options: BodyMapOptions): HTMLButtonElem
   }
   button.setAttribute("aria-label", marker.name);
   button.dataset["focusId"] = `pmarker:${marker.key}`;
+  button.dataset["markerKey"] = marker.key;
   const dot = document.createElement("span");
   dot.className = "marker-dot";
   button.append(dot);
@@ -283,6 +285,7 @@ function phoneZombieRow(marker: MapMarker, options: BodyMapOptions): HTMLButtonE
   button.title = marker.id;
   button.setAttribute("aria-label", marker.name);
   button.dataset["focusId"] = `pmarker:${marker.key}`;
+  button.dataset["markerKey"] = marker.key;
   const dot = document.createElement("span");
   dot.className = "marker-dot";
   const label = document.createElement("span");

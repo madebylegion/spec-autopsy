@@ -1,5 +1,6 @@
 import "./style.css";
 import { validateReport } from "../report/validate-report.js";
+import { attachLinks } from "./link-map.js";
 import { renderPage } from "./render.js";
 import { stateFromLoad } from "./view-model.js";
 import type { Filters, LoadResult, PageState } from "./view-model.js";
@@ -14,6 +15,11 @@ let filters: Filters = { ghost: true, zombie: true, unproven: true, lowOnly: fal
 let selectedKey: string | null = null;
 /** The focus id of the control that opened the panel, so Close can return there. */
 let openerId: string | null = null;
+
+/** Hover, focus and "Show on map" links between a map marker and its toe tag. */
+const links = attachLinks(app, () =>
+  current.kind === "ready" || current.kind === "empty" ? current.report : null,
+);
 
 function focusId(): string | null {
   const active = document.activeElement;
@@ -46,12 +52,15 @@ function show(): void {
       openerId = focusId();
       selectedKey = key;
       show();
+      // A marker with a tag hands the focus to the tag afterwards (link-map.ts);
+      // a marker without a tag keeps the focus on the detail panel.
       focusById("detail");
       const panel = app.querySelector<HTMLElement>(".detail");
       if (panel !== null) panel.scrollIntoView({ block: "nearest" });
     },
     onClose: close,
   });
+  links.apply();
 }
 
 function close(): void {
@@ -84,6 +93,7 @@ async function loadInitial(): Promise<void> {
   current = stateFromLoad(result);
   banner = null;
   selectedKey = null;
+  links.clear();
   show();
 }
 
@@ -104,6 +114,7 @@ async function openFile(file: File): Promise<void> {
     banner = null;
     selectedKey = null;
     openerId = null;
+    links.clear();
   }
   show();
 }
@@ -117,7 +128,10 @@ document.addEventListener("drop", (event) => {
   if (file !== undefined) void openFile(file);
 });
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && selectedKey !== null) {
+  if (event.key !== "Escape") return;
+  // Escape clears the map and tag link and the status line, and still closes the detail panel.
+  links.clear();
+  if (selectedKey !== null) {
     event.preventDefault();
     close();
   }

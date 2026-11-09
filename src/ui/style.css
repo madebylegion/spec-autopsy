@@ -78,6 +78,16 @@ body {
   outline-offset: 2px;
 }
 
+/* Every control that takes part in the map and tag link shows the same focus ring. */
+.chip:focus-visible,
+.link-button:focus-visible,
+.marker:focus-visible,
+.phone-marker:focus-visible,
+.phone-zombie-row:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 .tag :focus-visible {
   outline-color: var(--tag-ink);
 }
@@ -92,26 +102,26 @@ body {
 .tag--ghost,
 .tag-type--ghost,
 .big--ghost,
-.toggle--ghost {
+.chip--ghost {
   --accent: var(--ghost-ink);
 }
 
 .tag--zombie,
 .tag-type--zombie,
 .big--zombie,
-.toggle--zombie {
+.chip--zombie {
   --accent: var(--zombie-ink);
 }
 
 .tag--unproven,
 .tag-type--unproven,
 .big--unproven,
-.toggle--unproven {
+.chip--unproven {
   --accent: var(--unproven-ink);
 }
 
 .tag-type--proven,
-.toggle--low {
+.chip--low {
   --accent: var(--bone);
 }
 
@@ -256,6 +266,23 @@ body {
   letter-spacing: 0.06em;
 }
 
+/* The live status line of the map and tag link: sticky at the bottom, hidden when empty. */
+#link-status {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 8px 16px;
+  border-top: 2px solid var(--slab-line);
+  background: var(--slab-raised);
+  color: var(--bone);
+  font-size: 0.9375rem;
+}
+
+#link-status:empty {
+  display: none;
+}
+
 /* Layout: phone first. The wide map column is hidden on a phone; the <details> map is hidden when wide. */
 .report {
   display: block;
@@ -273,7 +300,10 @@ body {
   margin: 24px 0 0;
 }
 
-/* Filters: outline when off; filled with the type colour and a check mark when on. */
+/*
+  Filter chips: all four share one rule set (same height, border and type).
+  Off = outline; on = filled with the type colour and a check mark; no findings = dimmed and disabled.
+*/
 .filters {
   display: flex;
   flex-wrap: wrap;
@@ -281,7 +311,7 @@ body {
   margin: 0 0 12px;
 }
 
-.toggle {
+.chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -289,24 +319,35 @@ body {
   min-height: var(--tap);
   padding: 0 16px;
   border: 2px solid var(--accent);
+  border-radius: 0;
   background: transparent;
   color: var(--bone);
   font-family: var(--font-display);
   font-size: 1rem;
+  text-align: center;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   cursor: pointer;
 }
 
-.toggle[aria-pressed="true"] {
+.chip[aria-pressed="true"] {
   background: var(--accent);
   color: var(--tag-ink);
   font-weight: 700;
 }
 
-.toggle-mark {
+.chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.chip-mark {
   display: inline-block;
   min-width: 1ch;
+}
+
+.chip-count {
+  font-weight: 700;
 }
 
 /*
@@ -542,6 +583,7 @@ body {
   width: max(10px, calc(var(--dot-units) * 100cqw / var(--map-w)));
   height: max(10px, calc(var(--dot-units) * 100cqw / var(--map-w)));
   border-radius: 50%;
+  transition: outline-color var(--swing);
 }
 
 .marker--ghost .marker-dot {
@@ -563,6 +605,14 @@ body {
 
 .marker--selected .marker-dot {
   outline: 2px solid var(--bone);
+  outline-offset: 3px;
+}
+
+/* The marker of the linked tag (hover, focus or "Show on map"): a dashed outline round the dot. */
+.marker[data-linked="true"] .marker-dot,
+.phone-marker[data-linked="true"] .marker-dot,
+.phone-zombie-row[data-linked="true"] .marker-dot {
+  outline: 3px dashed var(--bone);
   outline-offset: 3px;
 }
 
@@ -788,6 +838,7 @@ body {
   height: 100%;
   color: var(--tag-ink);
   transform-origin: 22px 0;
+  transition: outline-color var(--swing);
 }
 
 /*
@@ -815,6 +866,18 @@ body {
   outline: 3px solid var(--bone);
   outline-offset: 3px;
   animation: tag-swing var(--swing) ease-out;
+}
+
+/* The tag of the linked marker: a dashed outline on the unclipped article. */
+.tag[data-linked="true"] {
+  outline: 3px dashed var(--bone);
+  outline-offset: 3px;
+}
+
+/* Keyboard focus wins over the dashed link outline. */
+.tag[data-linked="true"]:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 
 /* The eyelet column is reserved, so nothing is drawn over the id or the stamp. */
@@ -923,7 +986,14 @@ body {
   -webkit-line-clamp: 4;
 }
 
-/* The "Open details" control: at least 44 x 44 px, with room above and below. */
+/* "Open details" and "Show on map" sit side by side and wrap on a narrow tag. */
+.tag-actions {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 8px;
+}
+
+/* The link controls: at least 44 x 44 px, with room above and below. */
 .link-button {
   display: inline-flex;
   align-items: center;

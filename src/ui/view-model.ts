@@ -84,6 +84,49 @@ export function typeCounts(findings: Finding[]): Record<FindingType, number> {
   return counts;
 }
 
+// ---------------------------------------------------------------------------
+// Filter chips
+// ---------------------------------------------------------------------------
+
+export interface ChipCounts {
+  ghost: number;
+  zombie: number;
+  unproven: number;
+  /** Findings with low confidence. */
+  low: number;
+}
+
+export interface ChipState {
+  key: "ghost" | "zombie" | "unproven" | "low";
+  label: string;
+  count: number;
+  pressed: boolean;
+  disabled: boolean;
+}
+
+/** The four chips in a fixed order. A chip with a count of 0 is disabled and never pressed. */
+export function chipStates(f: Filters, counts: ChipCounts): ChipState[] {
+  const make = (key: ChipState["key"], label: string, flag: boolean): ChipState => {
+    const count = counts[key];
+    return { key, label, count, pressed: flag && count > 0, disabled: count === 0 };
+  };
+  return [
+    make("ghost", "Ghosts", f.ghost),
+    make("zombie", "Zombies", f.zombie),
+    make("unproven", "Unproven", f.unproven),
+    make("low", `Low confidence only: ${f.lowOnly && counts.low > 0 ? "on" : "off"}`, f.lowOnly),
+  ];
+}
+
+/**
+ * The filters that are applied. A stale "low only" (no low finding in the current
+ * report) is off, so it cannot hide everything with no way to switch it off.
+ * The input is not changed.
+ */
+export function effectiveFilters(f: Filters, counts: ChipCounts): Filters {
+  return { ...f, lowOnly: f.lowOnly && counts.low > 0 };
+}
+
 /** A safety cap only: the CSS line clamp (4 lines wide, 5 on a phone) decides what is shown. */
 export const TITLE_MAX_CHARS = 280;
 
@@ -373,6 +416,62 @@ export function markerVisible(marker: MapMarker, f: Filters): boolean {
   if (!f[marker.status]) return false;
   if (f.lowOnly && marker.level !== "low") return false;
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// Link between map markers and toe tags
+// ---------------------------------------------------------------------------
+
+/**
+ * Today a tag key and a marker key are the same string (a requirement id, or
+ * `zombie:<index>`). The marker's tag key, or null when no tag with that key is on the page.
+ */
+export function tagKeyForMarker(markerKey: string, tagKeys: ReadonlySet<string>): string | null {
+  return tagKeys.has(markerKey) ? markerKey : null;
+}
+
+/** The key of the marker that belongs to a tag, or null when there is none. */
+export function markerKeyForTag(tagKey: string, markers: readonly MapMarker[]): string | null {
+  const marker = markers.find((m) => m.key === tagKey);
+  return marker === undefined ? null : marker.key;
+}
+
+export interface LinkInputs {
+  hover: string | null;
+  focus: string | null;
+  pinned: string | null;
+}
+
+/** The linked key: hover first, then focus, then the pinned one. */
+export function linkedKey(i: LinkInputs): string | null {
+  return i.hover ?? i.focus ?? i.pinned ?? null;
+}
+
+function shortName(key: string, report: Report): string {
+  const zombie = /^zombie:(\d+)$/.exec(key);
+  if (zombie !== null) {
+    const finding = report.findings[Number(zombie[1])];
+    return finding === undefined ? key : finding.title;
+  }
+  const cut = key.lastIndexOf("/");
+  return cut === -1 ? key : key.slice(cut + 1);
+}
+
+/**
+ * The text of the live status line.
+ * "map": a tag was used, the map answers. "tag": a marker was used, the tag answers.
+ * "no-tag": a marker has no tag on the page.
+ */
+export function linkMessage(kind: "map" | "tag" | "no-tag", key: string, report: Report): string {
+  const name = shortName(key, report);
+  if (kind === "map") return `Showing ${name} on the map`;
+  if (kind === "tag") return `Showing the toe tag of ${name}`;
+  return `${name} has no toe tag on the page`;
+}
+
+/** Smooth scrolling only when the visitor has not asked for reduced motion. */
+export function scrollBehavior(reducedMotion: boolean): "auto" | "smooth" {
+  return reducedMotion ? "auto" : "smooth";
 }
 
 // ---------------------------------------------------------------------------

@@ -5,13 +5,15 @@ import {
   applyFilters,
   buildMarkers,
   cardText,
+  chipStates,
   detailFor,
+  effectiveFilters,
   findingKeys,
   pathParts,
   sortFindings,
   typeCounts,
 } from "./view-model.js";
-import type { Detail, Filters, PageState } from "./view-model.js";
+import type { ChipCounts, ChipState, Detail, Filters, PageState } from "./view-model.js";
 
 export interface RenderOptions {
   /** Lines of an error banner shown above the current report, or null. */
@@ -28,7 +30,7 @@ export interface RenderOptions {
 /** Whether the phone "Body map" <details> is open; kept here so a re-render does not close it. */
 let phoneMapOpen = false;
 
-/** A check mark in text (U+2713, a text symbol and not an emoji) shows that a toggle is on. */
+/** A check mark in text (U+2713, a text symbol and not an emoji) shows that a chip is on. */
 const CHECK = "\u2713";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -170,59 +172,61 @@ function toeTag(finding: Finding, key: string, selected: boolean, onSelect: (key
   open.setAttribute("aria-label", `Open details for ${text.id}`);
   open.dataset["focusId"] = `card:${key}`;
   open.addEventListener("click", () => onSelect(key));
+  // The click is handled by link-map.ts (event delegation on data-show-on-map).
+  const show = el("button", "link-button", "Show on map");
+  show.type = "button";
+  show.setAttribute("aria-label", `Show ${text.id} on the map`);
+  show.dataset["focusId"] = `show:${key}`;
+  show.dataset["showOnMap"] = key;
+  const actions = el("div", "tag-actions");
+  actions.append(open, show);
   const meta = el("dl", "tag-meta");
   meta.append(
     metaRow("Location", pathNode(finding.file, finding.line)),
     metaRow("Confidence", text.confidence),
     metaRow("Cause of death", text.cause),
   );
-  sheet.append(head, title, open, meta);
+  sheet.append(head, title, actions, meta);
   shape.append(sheet);
   card.append(shape);
   item.append(card);
   return item;
 }
 
-function toggle(
-  label: string,
-  pressed: boolean,
-  id: string,
-  kind: string,
-  onClick: () => void,
-): HTMLElement {
-  const button = el("button", `toggle toggle--${kind}`);
+function chip(state: ChipState, onClick: () => void): HTMLElement {
+  const button = el("button", `chip chip--${state.key}`);
   button.type = "button";
-  button.setAttribute("aria-pressed", String(pressed));
-  button.dataset["focusId"] = id;
+  button.setAttribute("aria-pressed", String(state.pressed));
+  button.dataset["filter"] = state.key;
+  button.dataset["focusId"] = `filter:${state.key}`;
+  button.disabled = state.disabled;
   // The mark is a second cue for "on"; the state itself is read from aria-pressed.
-  const mark = el("span", "toggle-mark", pressed ? CHECK : "");
+  const mark = el("span", "chip-mark", state.pressed ? CHECK : "");
   mark.setAttribute("aria-hidden", "true");
-  button.append(mark, el("span", "toggle-label", label));
+  button.append(mark, el("span", "chip-label", state.label), el("span", "chip-count", String(state.count)));
   button.addEventListener("click", onClick);
   return button;
 }
 
-function filterBar(report: Report, options: RenderOptions): HTMLElement {
+function chipCounts(report: Report): ChipCounts {
   const counts = typeCounts(report.findings);
-  const lowCount = report.findings.filter((finding) => finding.confidence.level === "low").length;
+  const low = report.findings.filter((finding) => finding.confidence.level === "low").length;
+  return { ghost: counts.ghost, zombie: counts.zombie, unproven: counts.unproven, low };
+}
+
+function filterBar(report: Report, options: RenderOptions): HTMLElement {
   const f = options.filters;
   const bar = el("div", "filters");
   bar.setAttribute("role", "group");
   bar.setAttribute("aria-label", "Filters");
-  bar.append(
-    toggle(`Ghosts ${counts.ghost}`, f.ghost, "filter:ghost", "ghost", () =>
-      options.onFilters({ ...f, ghost: !f.ghost }),
-    ),
-    toggle(`Zombies ${counts.zombie}`, f.zombie, "filter:zombie", "zombie", () =>
-      options.onFilters({ ...f, zombie: !f.zombie }),
-    ),
-    toggle(`Unproven ${counts.unproven}`, f.unproven, "filter:unproven", "unproven", () =>
-      options.onFilters({ ...f, unproven: !f.unproven }),
-    ),
-    toggle(`Low confidence ${lowCount}`, f.lowOnly, "filter:low", "low", () =>
-      options.onFilters({ ...f, lowOnly: !f.lowOnly }),
-    ),
-  );
+  for (const state of chipStates(f, chipCounts(report))) {
+    bar.append(
+      chip(state, () => {
+        if (state.key === "low") options.onFilters({ ...f, lowOnly: !f.lowOnly });
+        else options.onFilters({ ...f, [state.key]: !f[state.key] });
+      }),
+    );
+  }
   return bar;
 }
 
@@ -230,7 +234,8 @@ function filterBar(report: Report, options: RenderOptions): HTMLElement {
 function tagList(report: Report, options: RenderOptions): HTMLElement {
   const section = el("section", "tags-section");
   section.append(el("h2", "section-title", "Toe tags"), filterBar(report, options));
-  const shown = sortFindings(applyFilters(report.findings, options.filters));
+  const applied = effectiveFilters(options.filters, chipCounts(report));
+  const shown = sortFindings(applyFilters(report.findings, applied));
   if (shown.length === 0) {
     section.append(el("p", "status status--empty", "No findings match the filters."));
     return section;
@@ -302,7 +307,7 @@ function reportView(report: Report, options: RenderOptions, withTags: boolean): 
   const mapInputs = {
     report,
     markers,
-    filters: options.filters,
+    filters: effectiveFilters(options.filters, chipCounts(report)),
     selectedKey: options.selectedKey,
     onSelect: options.onSelect,
   };
