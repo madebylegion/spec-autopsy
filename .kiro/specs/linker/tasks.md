@@ -2,7 +2,7 @@
 
 Each task is small enough for one call and ends with its own tests. Tests live in `tests/linker/`; fixtures in `tests/fixtures/`. Run tests with `npx vitest --run` and type check with `npx tsc --noEmit`. Do not commit a nested `.git`. No new dependencies are needed.
 
-- [ ] 1. Types, tag extractor and attachment rules
+- [x] 1. Types, tag extractor and attachment rules
   - Create `src/linker/types.ts` as in design.md (body map types, `TagHit`, accuracy types).
   - Create `src/linker/tags.ts`: `TAG_PATTERN`, `findTags`, `tagsInFile` (containing-symbol rule with innermost choice, 3-line look-ahead after the comment end, test-case rules, title tags, multi-line block comments).
   - Add `tests/linker/tags.test.ts` with example tests built from hand-written `FileIndex` objects: tag inside a symbol range; innermost symbol (method inside class); JSDoc right above a declaration; tag more than 3 lines above attaches to nothing; multi-line block comment line arithmetic; case sensitivity and the left boundary (`Xlinker/R1.1` is not a tag); test-file comment on the same line and 3 lines before a test case; title tag; no cross-attachment between test and non-test files; unknown ids are returned as hits and left to `link` for diagnostics.
