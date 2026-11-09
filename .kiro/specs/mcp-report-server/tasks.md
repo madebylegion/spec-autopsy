@@ -2,7 +2,7 @@
 
 Run tests with `npx vitest --run` and type check with `npx tsc --noEmit`. The agent has no shell: after task 1 writes `package.json`, the maintainer runs `npm install`. Only `package.json`, `src/mcp/`, `tests/mcp/`, `.kiro/settings/mcp.json`, `README.md` and this spec folder change.
 
-- [ ] 1. Dependencies, the stdio server and its tests
+- [x] 1. Dependencies, the stdio server and its tests
   - In `package.json` add to `dependencies`, pinned exactly: `@modelcontextprotocol/sdk` 1.20.0 and `zod` 3.25.76. Ask the maintainer to run `npm install`.
   - Create `src/mcp/server.ts` (under 150 lines in `src/mcp/`): report path from argv[2], `AUTOPSY_REPORT` or `.autopsy/report.json`; `load` with `validateReport`; tools `list_ghosts`, `list_findings` (optional `type`) and `explain` (`id`); tool errors with `isError: true` that say what is wrong and `npm run autopsy`; logs to stderr only; no write, socket or other file read.
   - Add `tests/mcp/server.test.ts`: SDK `Client` over `StdioClientTransport` against a report built with `buildReport` from `tests/helpers/report-sample.ts` in a temp dir (removed afterwards): tool list, `list_ghosts` returns exactly the ghosts, `list_findings` by type, `explain` for a ghost, a proven requirement and an unknown id, missing report, broken JSON, invalid report.

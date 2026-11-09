@@ -205,8 +205,10 @@ const STAMP_PAIRS: readonly (readonly [string, string, number])[] = [
 
 const PINNED = {
   dependencies: {
+    "@modelcontextprotocol/sdk": "1.20.0",
     "tree-sitter-wasms": "0.1.13",
     "web-tree-sitter": "0.25.10",
+    zod: "3.25.76",
   },
   devDependencies: {
     "@types/node": "22.10.2",
