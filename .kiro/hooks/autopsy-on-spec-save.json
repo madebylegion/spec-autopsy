@@ -3,12 +3,12 @@
   "hooks": [
     {
       "name": "Autopsy on spec save",
-      "description": "Re-run the autopsy when a requirements file is saved and list new ghosts. Logs to .autopsy/hook.log",
+      "description": "Re-run the autopsy when a requirements file is saved and list new ghosts. Runs .kiro/hooks/run-autopsy.sh, which finds node on a short PATH. Logs to .autopsy/hook.log",
       "trigger": "PostFileSave",
       "matcher": "\\.kiro/specs/[^/]+/requirements\\.md$",
       "action": {
         "type": "command",
-        "command": "mkdir -p .autopsy; L=.autopsy/hook.log; printf '%s fired %s\\n' \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" \"$(head -c 200 | tr '\\r\\n' '  ')\" >> \"$L\"; npm run --silent autopsy >> \"$L\" 2>&1; c=$?; echo \"exit=$c\" >> \"$L\"; exit $c"
+        "command": "sh .kiro/hooks/run-autopsy.sh"
       },
       "timeout": 120
     }
