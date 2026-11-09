@@ -1,0 +1,9 @@
+{
+  "name": "autopsy",
+  "description": "Answers questions about the SpecAutopsy report through the local spec-autopsy MCP server (read-only).",
+  "tools": ["@spec-autopsy"],
+  "allowedTools": ["@spec-autopsy/list_ghosts", "@spec-autopsy/list_findings", "@spec-autopsy/explain"],
+  "mcpServers": {
+    "spec-autopsy": { "command": "sh", "args": ["src/mcp/launch.sh"] }
+  }
+}

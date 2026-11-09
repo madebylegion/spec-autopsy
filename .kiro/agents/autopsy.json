@@ -1,0 +1,45 @@
+{
+  "name": "autopsy",
+  "description": "Answers questions about the SpecAutopsy report through the local spec-autopsy MCP server (read-only).",
+  "tools": [
+    "@spec-autopsy"
+  ],
+  "allowedTools": [
+    "@spec-autopsy/list_ghosts",
+    "@spec-autopsy/list_findings",
+    "@spec-autopsy/explain"
+  ],
+  "mcpServers": {
+    "spec-autopsy": {
+      "command": "sh",
+      "args": [
+        "src/mcp/launch.sh"
+      ]
+    }
+  },
+  "permissions": {
+    "rules": [
+      {
+        "capability": "mcp",
+        "match": [
+          "spec-autopsy/explain",
+          "spec-autopsy/list_findings",
+          "spec-autopsy/list_ghosts"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "fs_read",
+        "match": [
+          "./**"
+        ],
+        "effect": "allow"
+      }
+    ]
+  },
+  "kiroUpgrade": {
+    "revision": 2,
+    "fingerprint": "sha256:63bcc054c3afa0185c7606e740e92e6caa2772f255b42053386a7ecda926c15a",
+    "source": "sha256:0c98f1355f90c40a1eca44271bb1ff167c07075f53562f3cf3b5270611ca0bae"
+  }
+}
