@@ -27,6 +27,8 @@ export const STOPWORDS: ReadonlySet<string> = new Set([
  * Split text into lowercase word tokens. camelCase and snake_case are split,
  * stopwords and tokens shorter than 3 characters are dropped, one trailing "s"
  * is stripped (not after "ss"), and duplicates are removed (first one wins).
+ * A token made of digits only is kept when it has at least 2 digits ("40",
+ * "007"); a single digit is dropped like any token shorter than 3 characters.
  * The result is idempotent: tokenise(tokenise(s).join(" ")) equals tokenise(s).
  */
 export function tokenise(text: string): string[] {
@@ -37,7 +39,8 @@ export function tokenise(text: string): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
   for (const raw of spaced.split(/[^a-z0-9]+/)) {
-    if (raw.length < 3 || STOPWORDS.has(raw)) continue;
+    const isNumber = /^[0-9]{2,}$/.test(raw);
+    if (!isNumber && (raw.length < 3 || STOPWORDS.has(raw))) continue;
     let token = raw;
     if (token.length > 3 && token.endsWith("s") && !token.endsWith("ss")) {
       token = token.slice(0, -1);
