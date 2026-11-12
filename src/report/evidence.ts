@@ -36,6 +36,8 @@ export function unprovenEvidence(entry: RequirementEntry): string[] {
       how = link.commit === undefined ? "commit" : `commit ${sha7(link.commit)}`;
     } else if (link.method === "tag") {
       how = "tag";
+    } else if (link.method === "test-call") {
+      how = "test-call";
     } else {
       how = `overlap ${score2(link.score)}`;
     }

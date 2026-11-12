@@ -14,7 +14,7 @@ const TOP_KEYS = [
 const STATUSES: readonly string[] = ["ghost", "unproven", "proven"];
 const TYPES: readonly string[] = ["ghost", "unproven", "zombie"];
 const LEVELS: readonly string[] = ["high", "medium", "low"];
-const METHODS: readonly string[] = ["commit", "tag", "overlap"];
+const METHODS: readonly string[] = ["commit", "tag", "overlap", "test-call"];
 const SOURCES: readonly string[] = ["parser", "indexer", "linker"];
 
 type Rec = Record<string, unknown>;

@@ -1,8 +1,11 @@
 import type { Node, Tree } from "web-tree-sitter";
+import { collectNames } from "./names.js";
 import type { Symbol as CodeSymbol, SymbolKind } from "./types.js";
 
 interface RawSymbol {
   symbol: CodeSymbol;
+  /** The node whose text the symbol covers; its identifiers are the references. */
+  range: Node;
   /** Name of the owning class for methods, undefined for top-level symbols. */
   owner?: string;
 }
@@ -68,7 +71,7 @@ function handleDeclaration(
   if (FUNCTION_DECLARATION_TYPES.has(type)) {
     const name = node.childForFieldName("name");
     if (name !== null) {
-      out.push({ symbol: make(name.text, "function", exported, range, file) });
+      out.push({ symbol: make(name.text, "function", exported, range, file), range });
     }
     return;
   }
@@ -76,7 +79,7 @@ function handleDeclaration(
   if (CLASS_TYPES.has(type)) {
     const name = node.childForFieldName("name");
     if (name === null) return;
-    out.push({ symbol: make(name.text, "class", exported, range, file) });
+    out.push({ symbol: make(name.text, "class", exported, range, file), range });
     const body = node.childForFieldName("body");
     if (body === null) return;
     for (const member of body.namedChildren) {
@@ -86,6 +89,7 @@ function handleDeclaration(
       if (methodName === null) continue;
       out.push({
         symbol: make(`${name.text}.${methodName.text}`, "method", exported, member, file),
+        range: member,
         owner: name.text,
       });
     }
@@ -96,7 +100,7 @@ function handleDeclaration(
   if (simple !== undefined) {
     const name = node.childForFieldName("name");
     if (name !== null) {
-      out.push({ symbol: make(name.text, simple, exported, range, file) });
+      out.push({ symbol: make(name.text, simple, exported, range, file), range });
     }
     return;
   }
@@ -112,7 +116,7 @@ function handleDeclaration(
       const value = declarator.childForFieldName("value");
       const kind: SymbolKind =
         value !== null && FUNCTION_VALUE_TYPES.has(value.type) ? "function" : "const";
-      out.push({ symbol: make(name.text, kind, exported, range, file) });
+      out.push({ symbol: make(name.text, kind, exported, range, file), range });
     }
   }
 }
@@ -123,9 +127,10 @@ function compareCodeUnits(a: string, b: string): number {
 
 /**
  * Extracts top-level symbols (and class methods) from a TypeScript, TSX or
- * JavaScript syntax tree. Unrecognised nodes are skipped.
+ * JavaScript syntax tree. Unrecognised nodes are skipped. With `withDetails`,
+ * every symbol also carries `references`, the identifier names its body uses.
  */
-export function extractTs(tree: Tree, file: string): CodeSymbol[] {
+export function extractTs(tree: Tree, file: string, withDetails = false): CodeSymbol[] {
   const raw: RawSymbol[] = [];
   const exportedNames = new Set<string>();
 
@@ -166,11 +171,12 @@ export function extractTs(tree: Tree, file: string): CodeSymbol[] {
     }
   }
 
-  const symbols: CodeSymbol[] = raw.map(({ symbol, owner }) => {
+  const symbols: CodeSymbol[] = raw.map(({ symbol, range, owner }) => {
     const top = owner === undefined ? symbol.name : owner;
-    return exportedNames.has(top) && !symbol.exported
-      ? { ...symbol, exported: true }
-      : symbol;
+    const result =
+      exportedNames.has(top) && !symbol.exported ? { ...symbol, exported: true } : symbol;
+    if (withDetails) result.references = collectNames(range);
+    return result;
   });
 
   return symbols

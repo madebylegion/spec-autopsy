@@ -8,10 +8,19 @@ export interface Symbol {
   startLine: number;     // 1-based, inclusive
   endLine: number;       // 1-based, inclusive
   file: string;          // project-relative, "/" separators
+  /** Identifier names the body uses, definition names excluded. Only with details. */
+  references?: string[];
 }
 
 export interface CommentEntry { line: number; text: string }
-export interface TestCase { title: string; line: number }
+export interface TestCase {
+  title: string;
+  line: number;
+  /** Last line of the test case node. Only with details. */
+  endLine?: number;
+  /** Identifier names the body uses, nested test cases excluded. Only with details. */
+  calls?: string[];
+}
 
 export interface GitCommit {
   sha: string;

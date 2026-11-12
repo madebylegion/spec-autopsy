@@ -1,6 +1,6 @@
-import type { CodeIndex, FileIndex, KiroCommit } from "../indexer/index.js";
+import type { CodeIndex, FileIndex, KiroCommit, TestCase } from "../indexer/index.js";
 import type { Diagnostic, Requirement, TaskEntry } from "../parser/index.js";
-import { classifyRequirement, findZombies, symbolKey } from "./classify.js";
+import { classifyRequirement, findZombies, isZombieCandidate, symbolKey } from "./classify.js";
 import { commitHits, resolveTaskCommits, unknownTaskRequirements } from "./commit-links.js";
 import type { CommitHit } from "./commit-links.js";
 import { filterHitsByDesign } from "./design-filter.js";
@@ -40,6 +40,28 @@ interface Work {
 
 function testKey(file: string, line: number, title: string): string {
   return `${file}\u0000${line}\u0000${title}`;
+}
+
+/**
+ * The explicit owners of every symbol: symbol key to the set of requirement
+ * ids whose code link to that symbol has method `tag` or `commit`. Reads the
+ * code links already on the works only, so it is pure. Taken once, after the
+ * commit and tag steps; `overlap` and `test-call` links never count as owners.
+ */
+function explicitOwners(works: readonly Work[]): ReadonlyMap<string, ReadonlySet<string>> {
+  const owners = new Map<string, Set<string>>();
+  for (const work of works) {
+    for (const [key, codeLink] of work.code) {
+      if (codeLink.method !== "tag" && codeLink.method !== "commit") continue;
+      let set = owners.get(key);
+      if (set === undefined) {
+        set = new Set<string>();
+        owners.set(key, set);
+      }
+      set.add(work.req.id);
+    }
+  }
+  return owners;
 }
 
 function dateRank(date: string): number {
@@ -166,11 +188,20 @@ function contradictionOf(
   return best;
 }
 
+/** A zombie candidate of a non-test file, found by name for the `test-call` step. */
+interface NamedCandidate {
+  key: string;
+  symbol: string;
+  file: string;
+  startLine: number;
+}
+
 /**
  * Joins requirements, the code index and the tests into a body map.
  * Pure and deterministic: commit links first (design symbol filter), then
  * tags, then token overlap for requirements without an explicit link on that
- * side, then classification (test-only tasks, defect descriptions, doubtful
+ * side, then `test-call` links for requirements whose tests call code, then
+ * classification (test-only tasks, defect descriptions, doubtful
  * ghosts). `extras` carries data read elsewhere; without it the result is the
  * one `link` gave before those rules.
  */
@@ -299,6 +330,10 @@ export function link(
     }
   }
 
+  // Owner snapshot: taken once after steps 0 and 1. Later steps add only
+  // `overlap` and `test-call` links, which never count as owners, so it stays valid.
+  const owners = explicitOwners(works);
+
   // 2. Token overlap, per side, only where there is no explicit link.
   for (const work of active) {
     const reqTokens = requirementTokens(work.req);
@@ -334,6 +369,56 @@ export function link(
             score: overlapScore(reqTokens, tokens),
           });
         }
+      }
+    }
+  }
+
+  // 2b. test-call: a requirement with a linked test and no code takes the
+  // zombie candidates its tests call, unless a tag or commit gave them to
+  // another requirement. Adds links to the requirement's own map only.
+  const testCasesByKey = new Map<string, TestCase>();
+  const candidatesByName = new Map<string, NamedCandidate[]>();
+  for (const file of index.files) {
+    if (file.isTest) {
+      for (const testCase of file.testCases) {
+        const key = testKey(file.path, testCase.line, testCase.title);
+        if (!testCasesByKey.has(key)) testCasesByKey.set(key, testCase);
+      }
+      continue;
+    }
+    for (const symbol of file.symbols) {
+      if (!isZombieCandidate(symbol, file)) continue;
+      const list = candidatesByName.get(symbol.name) ?? [];
+      list.push({
+        key: symbolKey(file.path, symbol.startLine, symbol.name),
+        symbol: symbol.name,
+        file: file.path,
+        startLine: symbol.startLine,
+      });
+      candidatesByName.set(symbol.name, list);
+    }
+  }
+  for (const work of active) {
+    if (work.code.size > 0 || work.tests.size === 0) continue;
+    const names = new Set<string>();
+    for (const testLink of work.tests.values()) {
+      const testCase = testCasesByKey.get(testKey(testLink.file, testLink.line, testLink.title));
+      for (const name of testCase?.calls ?? []) names.add(name);
+    }
+    for (const name of names) {
+      for (const candidate of candidatesByName.get(name) ?? []) {
+        const ownersOfSymbol = owners.get(candidate.key);
+        if (ownersOfSymbol !== undefined && ownersOfSymbol.size > 0 && !ownersOfSymbol.has(work.req.id)) {
+          continue;
+        }
+        linkedSymbols.add(candidate.key);
+        work.code.set(candidate.key, {
+          symbol: candidate.symbol,
+          file: candidate.file,
+          startLine: candidate.startLine,
+          method: "test-call",
+          score: 1,
+        });
       }
     }
   }

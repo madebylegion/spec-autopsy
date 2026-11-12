@@ -1,4 +1,5 @@
 import type { Node, Tree } from "web-tree-sitter";
+import { collectNames } from "./names.js";
 import type { Symbol as CodeSymbol, SymbolKind } from "./types.js";
 
 /** 1-based inclusive line range of a node. */
@@ -83,8 +84,10 @@ function compareCodeUnits(a: string, b: string): number {
 /**
  * Extracts top-level functions, classes, class methods and module-level
  * constants from a Python syntax tree. Unrecognised nodes are skipped.
+ * With `withDetails`, every symbol also carries `references`, the identifier
+ * names its body uses.
  */
-export function extractPy(tree: Tree, file: string): CodeSymbol[] {
+export function extractPy(tree: Tree, file: string, withDetails = false): CodeSymbol[] {
   const root = tree.rootNode;
   const allNames = readDunderAll(root);
   const out: CodeSymbol[] = [];
@@ -92,6 +95,12 @@ export function extractPy(tree: Tree, file: string): CodeSymbol[] {
   const topLevelExported = (name: string): boolean => {
     if (name.startsWith("_")) return false;
     return allNames === undefined ? true : allNames.has(name);
+  };
+
+  const add = (name: string, kind: SymbolKind, exported: boolean, range: Node): void => {
+    const symbol = make(name, kind, exported, range, file);
+    if (withDetails) symbol.references = collectNames(range);
+    out.push(symbol);
   };
 
   for (const node of root.namedChildren) {
@@ -106,7 +115,7 @@ export function extractPy(tree: Tree, file: string): CodeSymbol[] {
       const right = assignment.childForFieldName("right");
       if (left === null || right === null || left.type !== "identifier") continue;
       if (isDunder(left.text)) continue;
-      out.push(make(left.text, "const", topLevelExported(left.text), node, file));
+      add(left.text, "const", topLevelExported(left.text), node);
       continue;
     }
 
@@ -120,7 +129,7 @@ export function extractPy(tree: Tree, file: string): CodeSymbol[] {
     if (definition.type === "function_definition") {
       const name = definition.childForFieldName("name");
       if (name === null) continue;
-      out.push(make(name.text, "function", topLevelExported(name.text), node, file));
+      add(name.text, "function", topLevelExported(name.text), node);
       continue;
     }
 
@@ -128,7 +137,7 @@ export function extractPy(tree: Tree, file: string): CodeSymbol[] {
     const className = definition.childForFieldName("name");
     if (className === null) continue;
     const classExported = topLevelExported(className.text);
-    out.push(make(className.text, "class", classExported, node, file));
+    add(className.text, "class", classExported, node);
 
     const body = definition.childForFieldName("body");
     if (body === null) continue;
@@ -147,9 +156,7 @@ export function extractPy(tree: Tree, file: string): CodeSymbol[] {
         isDunder(methodName.text) || !methodName.text.startsWith("_")
           ? classExported
           : false;
-      out.push(
-        make(`${className.text}.${methodName.text}`, "method", exported, member, file),
-      );
+      add(`${className.text}.${methodName.text}`, "method", exported, member);
     }
   }
 

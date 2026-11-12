@@ -45,6 +45,20 @@ describe("precision-fix planted scenarios", () => {
     expect(codeLink?.startLine).toBe(5);
   });
 
+  it("proves dispatch/R1.2 through a test-call link to rotate_manifest only", () => {
+    const entry = map.requirements.find((r) => r.id === "dispatch/R1.2");
+    expect(entry).toBeDefined();
+    expect(entry?.status).toBe("proven");
+    expect(entry?.codeLinks).toHaveLength(1);
+    const codeLink = entry?.codeLinks[0];
+    expect(codeLink?.symbol).toBe("rotate_manifest");
+    expect(codeLink?.method).toBe("test-call");
+    expect(codeLink?.score).toBe(1);
+    expect(codeLink?.file).toBe("src/dispatch.py");
+    expect(codeLink?.startLine).toBe(8);
+    expect(entry?.testLinks.map((t) => t.title)).toEqual(["test_hands_every_bundle_to_night_courier"]);
+  });
+
   it("keeps the findings equal to expected.json", () => {
     const expected = truth.map((e) => `${e.class} ${e.key}`).sort();
     expect(foundIds(map)).toEqual(expected);

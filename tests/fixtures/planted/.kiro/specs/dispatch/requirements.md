@@ -13,3 +13,4 @@ Dispatch rules of the planted fixture, added for the precision-fix checks. Not p
 #### Acceptance Criteria
 
 1. The dispatcher SHALL cap each lane at 12 bundles.
+2. WHEN a lane is sealed, the dispatcher SHALL hand every bundle to the night courier.

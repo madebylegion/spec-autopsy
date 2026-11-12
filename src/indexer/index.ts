@@ -57,7 +57,7 @@ function clampSymbols(symbols: CodeSymbol[], lineCount: number): CodeSymbol[] {
     .map((s) => {
       const startLine = Math.min(Math.max(s.startLine, 1), max);
       const endLine = Math.min(Math.max(s.endLine, startLine), max);
-      return {
+      const clamped: CodeSymbol = {
         name: s.name,
         kind: s.kind,
         exported: s.exported,
@@ -65,6 +65,8 @@ function clampSymbols(symbols: CodeSymbol[], lineCount: number): CodeSymbol[] {
         endLine,
         file: s.file,
       };
+      if (s.references !== undefined) clamped.references = s.references;
+      return clamped;
     })
     .sort((a, b) => a.startLine - b.startLine || compareCodeUnits(a.name, b.name));
 }
@@ -170,9 +172,11 @@ export async function indexRepo(root: string): Promise<CodeIndex> {
           });
         } else {
           const extractedSymbols =
-            language === "python" ? extractPy(tree, entry.path) : extractTs(tree, entry.path);
+            language === "python"
+              ? extractPy(tree, entry.path, true)
+              : extractTs(tree, entry.path, true);
           const extractedComments = extractComments(tree, language);
-          const extractedTests = extractTestCases(tree, language, entry.isTest);
+          const extractedTests = extractTestCases(tree, language, entry.isTest, true);
           symbols = extractedSymbols;
           comments = extractedComments;
           testCases = extractedTests;

@@ -1,4 +1,5 @@
 import type { Node, Tree } from "web-tree-sitter";
+import { collectNames } from "./names.js";
 import type { CommentEntry, FileIndex, TestCase } from "./types.js";
 
 type Language = FileIndex["language"];
@@ -63,7 +64,12 @@ function plainTitle(node: Node): string | undefined {
   return undefined;
 }
 
-function tsTestCase(node: Node): (Positioned & { title: string }) | undefined {
+interface FoundTest extends Positioned {
+  title: string;
+  node: Node;
+}
+
+function tsTestCase(node: Node): FoundTest | undefined {
   if (node.type !== "call_expression") return undefined;
   const callee = node.childForFieldName("function");
   if (callee === null || callee.type !== "identifier" || !TEST_CALLEES.has(callee.text)) {
@@ -81,33 +87,52 @@ function tsTestCase(node: Node): (Positioned & { title: string }) | undefined {
   if (first === undefined) return undefined;
   const title = plainTitle(first);
   if (title === undefined) return undefined;
-  return { title, line: node.startPosition.row + 1, index: node.startIndex };
+  return { title, line: node.startPosition.row + 1, index: node.startIndex, node };
 }
 
-function pyTestCase(node: Node): (Positioned & { title: string }) | undefined {
+function pyTestCase(node: Node): FoundTest | undefined {
   if (node.type !== "function_definition") return undefined;
   const name = node.childForFieldName("name");
   if (name === null || !name.text.startsWith("test_")) return undefined;
-  return { title: name.text, line: node.startPosition.row + 1, index: node.startIndex };
+  return { title: name.text, line: node.startPosition.row + 1, index: node.startIndex, node };
+}
+
+/** Last line of a node; a node ending at column 0 does not cover that line. */
+function lastLine(node: Node): number {
+  const start = node.startPosition.row + 1;
+  let end = node.endPosition.row + 1;
+  if (node.endPosition.column === 0 && end > start) end -= 1;
+  return end;
 }
 
 /**
  * Test cases of a test file: `it(`, `test(`, `describe(` calls with a plain
  * string first argument (TS/JS) or `def test_*` functions (Python). Files that
  * are not test files always give an empty list. Sorted by line.
+ * With `withDetails`, every test case also carries `endLine` and `calls`: the
+ * identifier names its body uses, without the callees `it`, `test` and
+ * `describe`, its own function name and anything inside a nested test case.
  */
 export function extractTestCases(
   tree: Tree,
   language: Language,
   isTest: boolean,
+  withDetails = false,
 ): TestCase[] {
   if (!isTest) return [];
   const pick = language === "python" ? pyTestCase : tsTestCase;
-  const found: Array<Positioned & { title: string }> = [];
+  const found: FoundTest[] = [];
   for (const node of walk(tree.rootNode)) {
     const testCase = pick(node);
     if (testCase !== undefined) found.push(testCase);
   }
   found.sort(byPosition);
-  return found.map((t) => ({ title: t.title, line: t.line }));
+  return found.map((t): TestCase => {
+    if (!withDetails) return { title: t.title, line: t.line };
+    const calls = collectNames(t.node, {
+      skipSubtree: (node) => pick(node) !== undefined,
+      skipNames: TEST_CALLEES,
+    });
+    return { title: t.title, line: t.line, endLine: lastLine(t.node), calls };
+  });
 }

@@ -1,6 +1,6 @@
 import type { Symbol as CodeSymbol, SymbolKind, TestCase } from "../indexer/index.js";
 
-export type LinkMethod = "commit" | "tag" | "overlap";
+export type LinkMethod = "commit" | "tag" | "overlap" | "test-call";
 export type RequirementStatus = "ghost" | "unproven" | "proven";
 // Kept as a subset of SymbolKind (methods are never zombie candidates).
 export type ZombieKind = Extract<
