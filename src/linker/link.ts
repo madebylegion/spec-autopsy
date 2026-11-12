@@ -200,8 +200,9 @@ interface NamedCandidate {
  * Joins requirements, the code index and the tests into a body map.
  * Pure and deterministic: commit links first (design symbol filter), then
  * tags, then token overlap for requirements without an explicit link on that
- * side, then `test-call` links for requirements whose tests call code, then
- * helper adoption (helpers of linked code are no zombies), then
+ * side (a symbol with an explicit owner is not overlap-linked to another
+ * requirement), then `test-call` links for requirements whose tests call
+ * code, then helper adoption (helpers of linked code are no zombies), then
  * classification (test-only tasks, defect descriptions, doubtful
  * ghosts). `extras` carries data read elsewhere; without it the result is the
  * one `link` gave before those rules.
@@ -331,11 +332,13 @@ export function link(
     }
   }
 
-  // Owner snapshot: taken once after steps 0 and 1. Later steps add only
-  // `overlap` and `test-call` links, which never count as owners, so it stays valid.
+  // Owner snapshot (rule 5): taken once after steps 0 and 1 and before step 2.
+  // Later steps add only `overlap` and `test-call` links, which never count as
+  // owners, so it stays valid for the whole run and step 2b reuses it.
   const owners = explicitOwners(works);
 
   // 2. Token overlap, per side, only where there is no explicit link.
+  // A symbol with an explicit owner is skipped for every other requirement.
   for (const work of active) {
     const reqTokens = requirementTokens(work.req);
     if (!work.explicitCode) {
@@ -345,6 +348,14 @@ export function link(
           const tokens = symbolTokens(symbol.name);
           if (!overlaps(reqTokens, tokens)) continue;
           const key = symbolKey(file.path, symbol.startLine, symbol.name);
+          const ownersOfSymbol = owners.get(key);
+          if (
+            ownersOfSymbol !== undefined &&
+            ownersOfSymbol.size > 0 &&
+            !ownersOfSymbol.has(work.req.id)
+          ) {
+            continue;
+          }
           linkedSymbols.add(key);
           work.code.set(key, {
             symbol: symbol.name,

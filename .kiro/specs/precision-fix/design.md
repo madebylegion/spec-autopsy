@@ -68,7 +68,7 @@ The planted fixture gets new files only, plus appended entries; no existing file
 - `tests/test_dispatch.py`: a test tagged `# dispatch/R1.1` that uses `LANE_CEILING` (task 1); a test named `test_hands_every_bundle_to_night_courier` that calls `rotate_manifest` and nothing else from `src` (task 3). It must not call the helpers, so they are adopted and not `test-call` linked.
 - Expected outcome: R1.1 proven (tag on the constant, tag on the test); R1.2 proven by a `test-call` link to `rotate_manifest` only; `pad_manifest_rows` and `blank_row` linked to nothing and not zombies. Findings stay at 14.
 
-Rule 5 scenario (task 5, new files only, after the three above): a further requirement of the dispatch spec with an explicit code link, a constant tagged to it, and a second requirement with no explicit code link whose text shares two words with the constant's name. Without rule 5 the second requirement is overlap-linked to the constant and is proven by accident; with it, it stays a ghost. This scenario is the one place where a finding is wanted: the second requirement is a true ghost, so `expected.json` gets an add-only entry for it if the planted truth needs one. That raises the planted ghost count and findings above 14 and 4, so `tests/report/planted-report.test.ts` and `tests/cli/autopsy.test.ts` would fail on their exact counts; those tests are named in "Existing tests that may fail" and the human decides. If the implementer prefers not to touch those counts, the scenario is covered by the hand-written indexes in `overlap-owners.test.ts` alone, and the planted addition is skipped and reported.
+Rule 5 does not extend the planted fixture, because four existing tests pin its 14 findings (and 4 ghosts) and their assertions must not be edited. Rule 5 is covered by `tests/linker/overlap-owners.test.ts` on hand-written indexes.
 
 The implementer recounts line numbers and checks by hand, with the `tokenise` rules, that no new name or test title shares two words with a requirement of another spec, and that no new requirement shares two words with an existing symbol name or title. The cases that need a ghost or a zombie, the explicit-link exception, a cycle and a reference from a test file, are covered by hand-written indexes in unit tests, not by the planted fixture.
 
@@ -76,16 +76,8 @@ The held-out and blind fixtures are not touched. The only new use of the held-ou
 
 ## Existing tests that may fail
 
-None confirmed: I wrote this spec without running the suite. Candidates the implementer checks first, each of which is named here and in the reply if it fails, with the reason, and is not edited:
-
-- `tests/indexer/` tests that compare a whole `FileIndex` or `Symbol` from `indexRepo` with `toEqual` (the new `references` field), and tests on a Python source with a module-level assignment (a new `const` symbol). The extractor-level tests are protected by the `withDetails` default.
-- `tests/linker/` and `tests/report/` tests whose requirement or title text contains a number of 2 or more digits (rule 2 changes the token sets and so possibly the score).
-- A `tests/report/` test that lists the accepted link methods exactly.
-- `tests/linker/recall-fix`-style self tests on this repository (`tests/recall-fix/recall-fix-self.test.ts`): the new spec adds requirements to this repository, and rule 4 removes zombies; the assertions there are about ghosts of another spec and should hold.
-- `tests/report/planted-report.test.ts` and `tests/cli/autopsy.test.ts` hold only while the planted scenarios of tasks 1, 3 and 4 stay finding-free, as planned. The rule 5 planted scenario of task 5 may change their exact counts (see Fixture plan); if so, they are named here and the human decides.
-- Linker tests (existing examples and fast-check properties) in which a symbol with a `tag` or `commit` link to one requirement is also overlap-linked to another: rule 5 removes the second link. Task 5 checks these first.
-
-py-extractor.test.ts 'ignores nested functions and non-definition statements': asserted that `x = 1` is no symbol; changed on purpose by rule 1 (owner decision)
+- (a) `py-extractor.test.ts "ignores nested functions and non-definition statements"`: changed on purpose by rule 1 (owner decision, task 1 fix round).
+- (b) Planted-count tests (autopsy.test.ts, commit-links-planted.test.ts, planted-report.test.ts): failed once when task 5 added a planted ghost; the planted extension was reverted (owner decision, task 5 fix round), no assertion edited.
 
 ## Testing
 
@@ -105,4 +97,4 @@ The regression statement "equals today's result" rests on three things, since th
 | precision-fix/R6.1 to R6.7 | pure `link`, optional fields, properties |
 | precision-fix/R7.1 to R7.9 | planted extension, `heldout-accuracy.test.ts`, properties |
 | precision-fix/R8.1 to R8.3 | full run, `npm run autopsy`, final summary |
-| precision-fix/R9.1 to R9.7 | rule 5, `link.ts` (`explicitOwners`, step 2), `overlap-owners.test.ts`, planted addition |
+| precision-fix/R9.1 to R9.7 | rule 5, `link.ts` (`explicitOwners`, step 2), `overlap-owners.test.ts` |
