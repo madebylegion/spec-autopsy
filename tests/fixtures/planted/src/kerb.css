@@ -1,0 +1,9 @@
+.sign {
+  color: #202020;
+  background: #f4f4f4;
+  border: 2px solid #202020;
+}
+
+.sign-title {
+  font-weight: bold;
+}
