@@ -59,8 +59,22 @@ describe("precision-fix planted scenarios", () => {
     expect(entry?.testLinks.map((t) => t.title)).toEqual(["test_hands_every_bundle_to_night_courier"]);
   });
 
-  it("keeps the findings equal to expected.json", () => {
+  it("adopts the helpers pad_manifest_rows and blank_row: linked to nothing and no zombies", () => {
+    const linkedSymbols = new Set<string>();
+    for (const r of map.requirements) {
+      for (const l of r.codeLinks) linkedSymbols.add(l.symbol);
+    }
+    for (const name of ["pad_manifest_rows", "blank_row"]) {
+      expect(linkedSymbols.has(name)).toBe(false);
+      expect(map.zombies.some((z) => z.symbol === name)).toBe(false);
+    }
+    // Control: the root is linked.
+    expect(linkedSymbols.has("rotate_manifest")).toBe(true);
+  });
+
+  it("keeps the findings equal to expected.json (14)", () => {
     const expected = truth.map((e) => `${e.class} ${e.key}`).sort();
     expect(foundIds(map)).toEqual(expected);
+    expect(foundIds(map)).toHaveLength(14);
   });
 });

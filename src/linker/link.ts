@@ -188,7 +188,7 @@ function contradictionOf(
   return best;
 }
 
-/** A zombie candidate of a non-test file, found by name for the `test-call` step. */
+/** A zombie candidate of a non-test file, found by name for the `test-call` and adoption steps. */
 interface NamedCandidate {
   key: string;
   symbol: string;
@@ -201,6 +201,7 @@ interface NamedCandidate {
  * Pure and deterministic: commit links first (design symbol filter), then
  * tags, then token overlap for requirements without an explicit link on that
  * side, then `test-call` links for requirements whose tests call code, then
+ * helper adoption (helpers of linked code are no zombies), then
  * classification (test-only tasks, defect descriptions, doubtful
  * ghosts). `extras` carries data read elsewhere; without it the result is the
  * one `link` gave before those rules.
@@ -419,6 +420,43 @@ export function link(
           method: "test-call",
           score: 1,
         });
+      }
+    }
+  }
+
+  // 2c. Helper adoption: a zombie candidate of a non-test file that a linked
+  // symbol, or an adopted helper, references is adopted: linked to nothing and
+  // no zombie. Roots are the linked symbols of non-test files. Only roots and
+  // adopted helpers are read, so a reference from a test file or from a
+  // zombie that is not adopted adopts nothing. Iterative work list, visited set.
+  const unlinkedByName = new Map<string, NamedCandidate[]>();
+  for (const list of candidatesByName.values()) {
+    for (const candidate of list) {
+      if (linkedSymbols.has(candidate.key)) continue;
+      const bucket = unlinkedByName.get(candidate.symbol) ?? [];
+      bucket.push(candidate);
+      unlinkedByName.set(candidate.symbol, bucket);
+    }
+  }
+  const referencesByKey = new Map<string, readonly string[]>();
+  const workList: string[] = [];
+  for (const file of index.files) {
+    if (file.isTest) continue;
+    for (const symbol of file.symbols) {
+      const key = symbolKey(file.path, symbol.startLine, symbol.name);
+      referencesByKey.set(key, symbol.references ?? []);
+      if (linkedSymbols.has(key)) workList.push(key);
+    }
+  }
+  const visited = new Set<string>();
+  while (workList.length > 0) {
+    const key = workList.pop() as string;
+    for (const name of referencesByKey.get(key) ?? []) {
+      for (const candidate of unlinkedByName.get(name) ?? []) {
+        if (visited.has(candidate.key)) continue;
+        visited.add(candidate.key);
+        adoptedSymbols.add(candidate.key);
+        workList.push(candidate.key);
       }
     }
   }
