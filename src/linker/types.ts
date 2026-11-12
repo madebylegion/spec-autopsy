@@ -16,6 +16,11 @@ export interface CodeLink {
   score: number;
   /** SHA of the task commit; present only on commit links. */
   commit?: string;
+  /**
+   * Present (true) only on a commit link made by rule 6: the task commit changed
+   * lines inside the symbol without owning its start line.
+   */
+  modified?: true;
 }
 
 export interface TestLink {

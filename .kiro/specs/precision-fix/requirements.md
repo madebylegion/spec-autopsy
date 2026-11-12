@@ -13,7 +13,11 @@ A fifth cause class showed up after task 1, measured on the held-out fixture. Si
 
 5. Token overlap (step 2 of `link`) takes a symbol that an explicit link (`tag` or `commit`) already gave to a different requirement.
 
-This feature fixes the five causes with deterministic rules. No LLM, no network, no randomness, no new dependency, `link` stays pure, and the report schema stays at version 1. Dependencies keep flowing one way: indexer, then linker, then report.
+A sixth cause class showed up on this repository's own self-autopsy (`npm run autopsy`): 20 new false ghosts. This very spec is fully built and tested, yet R1.2 to R1.6, R2.3, R2.4, R5.1 to R5.7 and others are reported as ghosts, each with commit-linked tests and no code link. The cause is that `commitHits` links a symbol to a task commit only when the symbol's start line is owned by that commit in the blame. A task that modifies an existing function (task 2 changed 3 lines inside `tokenise`, task 1 changed `extractPy`, task 4 changed `link`) owns none of the start lines, so its requirements get test links and no code link. Most real tasks modify existing code, so this is the commonest false ghost in practice.
+
+6. A symbol that a task commit modified, without owning its start line, is not linked to that task.
+
+This feature fixes the six causes with deterministic rules. No LLM, no network, no randomness, no new dependency, `link` stays pure, and the report schema stays at version 1. Dependencies keep flowing one way: indexer, then linker, then report.
 
 The held-out fixture may be used to tune. The blind fixtures `tests/fixtures/blind3` and `tests/fixtures/blind4` are not opened and nothing is tuned on them. No rule contains a name taken from any fixture.
 
@@ -31,6 +35,8 @@ Requirement IDs follow the convention of the EARS parser: `precision-fix/R<N>.<M
 - **Root symbol**: a symbol of a non-test file that is linked to at least one requirement by any method, `test-call` included.
 - **Adopted helper**: a zombie candidate that a root symbol references, directly or through other adopted helpers. It is linked to nothing and is not a zombie.
 - **Held-out fixture**: `tests/fixtures/heldout`, allowed for tuning. **Blind fixtures**: `tests/fixtures/blind3` and `tests/fixtures/blind4`, not allowed.
+- **Start-line hit**: a symbol hit of a resolved task commit because the commit owns the symbol's start line in the blame. This is the only kind of symbol hit that existed before rule 6.
+- **Modified-symbol hit**: a symbol hit of a resolved task commit because the commit owns at least one line of the symbol's line range other than as a start-line hit, and the design.md of the task's spec names the symbol. The code link made from it carries `modified: true`.
 
 ## Requirements
 
@@ -158,3 +164,18 @@ Requirement IDs follow the convention of the EARS parser: `precision-fix/R<N>.<M
 5. WHEN a symbol has no explicit owner, THEN overlap SHALL link it exactly as before this rule, and THRESHOLD, NEAR_MISS, `overlapScore`, `overlaps` and the near-miss logic SHALL stay unchanged.
 6. The linker SHALL take the explicit owners from one snapshot, built by one helper that `test-call` (requirement 4) also uses, and `link` SHALL stay pure and deterministic, and its result SHALL NOT depend on the order of the requirements.
 7. WHEN the rule is done, THEN on the planted fixture overall precision and overall recall SHALL stay at least 0.8, and every existing test SHALL pass without editing an assertion; IF one needs a change, THEN design.md "Existing tests that may fail" SHALL name it.
+
+### Requirement 10: Modified symbols are linked to the task that changed them
+
+**User Story:** As a maintainer, I want a function that a task modified to be linked to that task, so that a requirement built by changing existing code is not reported as a ghost.
+
+#### Acceptance Criteria
+
+1. WHEN `commitHits` examines a non-test symbol and a resolved task commit owns at least one line in the symbol's line range [startLine, endLine] in the blame of its file, and the symbol's name is named, by `isNamedInDesign`, in the design.md text of the spec of that task, THEN `commitHits` SHALL also return a hit of that symbol for that commit, and the code link made from it SHALL have method `commit`, score 1, the SHA of the commit and the field `modified: true`.
+2. IF no design.md text is given for the spec of the task, or `commitHits` receives no design texts, THEN `commitHits` SHALL return no modified-symbol hit for that task, so that nothing is guessed.
+3. WHEN a resolved task commit owns the start line of a symbol, THEN `commitHits` SHALL return the hit exactly as before this rule, and the code link made from it SHALL NOT have the field `modified`; the design filter, helper adoption, `test-call`, token overlap and the explicit-owner rules SHALL stay as they are, and a test file SHALL never get a modified-symbol hit.
+4. WHEN several resolved task commits qualify for the same symbol, THEN `commitHits` SHALL return one hit per commit, in the order of file, then symbol line, then the order of those commits in `kiroCommits`.
+5. The linker SHALL stay pure and deterministic: `commitHits` SHALL take the design texts as an optional parameter, and WHEN `link` runs without design texts, THEN it SHALL return the body map it returned before this rule, and the result SHALL NOT depend on the order of the requirements.
+6. WHEN the evidence line of the report names a code link that has `modified: true` and method `commit`, THEN it SHALL read "modified by task commit <sha7>" instead of the commit wording of a start-line hit.
+7. The report SHALL stay valid under schema version 1: `CodeLink` SHALL gain the optional field `modified?: true`, and `validateReport` SHALL accept a code link with `modified: true` and SHALL reject a `modified` field that is not `true`.
+8. WHEN the work is done, THEN `npm run autopsy` on this repository SHALL show at most 8 ghosts (26 before this rule) and none of precision-fix/R1.2, precision-fix/R1.3, precision-fix/R1.4, precision-fix/R1.5, precision-fix/R1.6, precision-fix/R2.3, precision-fix/R2.4, precision-fix/R5.1, precision-fix/R5.2, precision-fix/R5.4, precision-fix/R5.5 and precision-fix/R5.7 SHALL be a ghost, and planted overall precision and overall recall SHALL stay at least 0.8 with the 14 planted findings unchanged.

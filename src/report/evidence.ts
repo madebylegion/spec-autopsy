@@ -33,7 +33,12 @@ export function unprovenEvidence(entry: RequirementEntry): string[] {
   for (const link of shown) {
     let how: string;
     if (link.method === "commit") {
-      how = link.commit === undefined ? "commit" : `commit ${sha7(link.commit)}`;
+      if (link.modified === true) {
+        // Rule 6: the task commit changed lines inside the symbol.
+        how = link.commit === undefined ? "modified by task commit" : `modified by task commit ${sha7(link.commit)}`;
+      } else {
+        how = link.commit === undefined ? "commit" : `commit ${sha7(link.commit)}`;
+      }
     } else if (link.method === "tag") {
       how = "tag";
     } else if (link.method === "test-call") {

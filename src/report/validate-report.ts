@@ -147,6 +147,10 @@ function checkCodeLink(value: unknown, path: string, errors: Errors): void {
   if (!checkLinkCommon(value, path, errors)) return;
   checkString(value, "symbol", path, errors);
   checkInt(value, "startLine", path, errors, isLine, "must be an integer >= 1");
+  // Optional: set (true) on a commit link to a symbol the task commit modified.
+  if (has(value, "modified") && value["modified"] !== true) {
+    errors.add(`${path}.modified`, "must be true when present");
+  }
 }
 
 function checkTestLink(value: unknown, path: string, errors: Errors): void {

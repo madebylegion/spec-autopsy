@@ -205,7 +205,8 @@ interface NamedCandidate {
  * code, then helper adoption (helpers of linked code are no zombies), then
  * classification (test-only tasks, defect descriptions, doubtful
  * ghosts). `extras` carries data read elsewhere; without it the result is the
- * one `link` gave before those rules.
+ * one `link` gave before those rules. Commit links include modified symbols
+ * (rule 6): they need `extras.designTexts` and carry `modified: true`.
  */
 export function link(
   requirements: readonly Requirement[],
@@ -237,10 +238,11 @@ export function link(
   const testOnlyShas: ReadonlySet<string> = new Set(index.testOnlyCommits ?? []);
   const testOnlyOf = new Map<Work, string>();
 
-  // 0. Commit links: commit, then task, then requirement ids, then the lines it owns.
+  // 0. Commit links: commit, then task, then requirement ids, then the lines it owns
+  // (or, with a design text that names the symbol, changed inside: rule 6).
   linkerDiagnostics.push(...unknownTaskRequirements(tasks, new Set(firstById.keys())));
   const resolved = resolveTaskCommits(index.kiroCommits, tasks);
-  const allHits = commitHits(index, resolved);
+  const allHits = commitHits(index, resolved, extras.designTexts);
   const hits = filterHitsByDesign(allHits, extras.designTexts);
   // Rule 1: a symbol the design filter dropped proves no requirement, but a
   // resolved task commit wrote it, so it is adopted: linked to nothing, no zombie.
@@ -258,15 +260,19 @@ export function link(
         const key = symbolKey(hit.file, hit.symbol.startLine, hit.symbol.name);
         work.explicitCode = true;
         linkedSymbols.add(key);
-        if (!work.code.has(key)) {
-          work.code.set(key, {
+        // A plain (start-line) link replaces a modified one, never the other way round.
+        const existing = work.code.get(key);
+        if (existing === undefined || (existing.modified === true && hit.modified !== true)) {
+          const codeLink: CodeLink = {
             symbol: hit.symbol.name,
             file: hit.file,
             startLine: hit.symbol.startLine,
             method: "commit",
             score: 1,
             commit: hit.sha,
-          });
+          };
+          if (hit.modified === true) codeLink.modified = true;
+          work.code.set(key, codeLink);
         }
       } else {
         const key = testKey(hit.file, hit.testCase.line, hit.testCase.title);
