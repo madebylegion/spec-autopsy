@@ -918,7 +918,7 @@
             {
               "title": "link.ts contains exactly one call of classifyRequirement and imports classifyRequirement from ./classify.js",
               "file": "tests/linker/constraint-reqs-guards.test.ts",
-              "line": 34,
+              "line": 32,
               "method": "tag",
               "score": 1
             }
@@ -936,7 +936,7 @@
             {
               "title": "adds no dependency and edits no package.json list, and no expected.json stops being valid JSON",
               "file": "tests/linker/constraint-reqs-guards.test.ts",
-              "line": 41,
+              "line": 39,
               "method": "tag",
               "score": 1
             }
@@ -954,7 +954,7 @@
             {
               "title": "design.md has the section Existing tests that may fail and names classify.test.ts and link-properties.test.ts",
               "file": "tests/linker/constraint-reqs-guards.test.ts",
-              "line": 72,
+              "line": 70,
               "method": "tag",
               "score": 1
             }
@@ -972,7 +972,7 @@
             {
               "title": "keeps the planted fixture at exactly 14 findings, exactly 4 ghosts, and overall precision and recall of at least 0.8",
               "file": "tests/linker/constraint-reqs-guards.test.ts",
-              "line": 84,
+              "line": 82,
               "method": "tag",
               "score": 1
             }
@@ -1553,7 +1553,7 @@
             {
               "title": "has the work done: tasks 1 and 2 of tasks.md are marked [x], task 3 may be either state",
               "file": "tests/linker/constraint-reqs-guards.test.ts",
-              "line": 102,
+              "line": 100,
               "method": "tag",
               "score": 1
             }
@@ -1571,7 +1571,7 @@
             {
               "title": "runs npm run autopsy on this repository without error and morgue-pass-2/R10.2, R10.4, R10.5 and R11.4 are no longer ghosts",
               "file": "tests/linker/constraint-reqs-guards.test.ts",
-              "line": 110,
+              "line": 108,
               "method": "tag",
               "score": 1
             }
@@ -49030,7 +49030,7 @@
             {
               "title": "runs npm run autopsy on this repository without error and morgue-pass-2/R10.2, R10.4, R10.5 and R11.4 are no longer ghosts",
               "file": "tests/linker/constraint-reqs-guards.test.ts",
-              "line": 110,
+              "line": 108,
               "method": "tag",
               "score": 1
             },
