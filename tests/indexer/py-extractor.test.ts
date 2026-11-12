@@ -151,9 +151,12 @@ describe("py extractor inline cases", () => {
     ]);
   });
 
-  it("ignores nested functions and non-definition statements", async () => {
+  it("ignores nested functions and keeps top-level constants", async () => {
     const src = ["x = 1", "def outer():", "    def inner(): pass", "    return inner"].join("\n");
-    expect(summary(await symbolsOf(src))).toEqual([["outer", "function", true, 2, 4]]);
+    expect(summary(await symbolsOf(src))).toEqual([
+      ["x", "const", true, 1, 1],
+      ["outer", "function", true, 2, 4],
+    ]);
   });
 
   it("returns no symbols for empty or invalid source", async () => {

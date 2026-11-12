@@ -103,5 +103,13 @@
   {
     "message": "chore: add calibration stamp",
     "files": [{ "path": "src/weighbridge.ts", "lines": [[14, 17]] }]
+  },
+  {
+    "message": "chore: add dispatch lane ceiling",
+    "files": [
+      ".kiro/specs/dispatch/requirements.md",
+      "src/dispatch.py",
+      "tests/test_dispatch.py"
+    ]
   }
 ]
