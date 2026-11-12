@@ -79,6 +79,21 @@ describe("label wrapping rules (style.css)", () => {
   });
 });
 
+describe("narrow chip layout (style.css)", () => {
+  it("gives the low-confidence chip the whole row at phone widths", () => {
+    const m = css.match(/@media\s*\(max-width:\s*480px\)\s*\{([\s\S]*?\.chip--low\s*\{[^{}]*\})/);
+    expect(m).not.toBeNull();
+    const block = m?.[1] ?? "";
+    expect(block).toMatch(/flex\s*:\s*1\s+1\s+100%/);
+    expect(block).toMatch(/grid-column\s*:\s*1\s*\/\s*-1/);
+  });
+
+  it("never clips .chip-label or .chip", () => {
+    for (const body of bodiesFor(".chip-label")) expect(body).not.toMatch(/overflow\s*:\s*hidden/);
+    for (const body of bodiesFor(".chip")) expect(body).not.toMatch(/overflow\s*:\s*hidden/);
+  });
+});
+
 describe("idBreakParts", () => {
   const join = (id: string): string => idBreakParts(id).join("");
 
