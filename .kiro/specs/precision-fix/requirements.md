@@ -9,7 +9,11 @@ On the held-out fixture (`tests/fixtures/heldout`) the linker reports 16 finding
 3. A helper that linked code calls is reported as a zombie, although it is part of how a requirement is built.
 4. `tokenise` drops every token shorter than 3 characters, so a number such as 25 is lost and a requirement misses its test by a hair.
 
-This feature fixes the four causes with deterministic rules. No LLM, no network, no randomness, no new dependency, `link` stays pure, and the report schema stays at version 1. Dependencies keep flowing one way: indexer, then linker, then report.
+A fifth cause class showed up after task 1, measured on the held-out fixture. Since Python constants are symbols, an exported constant that a tag explicitly links to one requirement is also linked by name overlap to other requirements that have no explicit code link. That turned a true ghost into a "proven" requirement, a lost true finding.
+
+5. Token overlap (step 2 of `link`) takes a symbol that an explicit link (`tag` or `commit`) already gave to a different requirement.
+
+This feature fixes the five causes with deterministic rules. No LLM, no network, no randomness, no new dependency, `link` stays pure, and the report schema stays at version 1. Dependencies keep flowing one way: indexer, then linker, then report.
 
 The held-out fixture may be used to tune. The blind fixtures `tests/fixtures/blind3` and `tests/fixtures/blind4` are not opened and nothing is tuned on them. No rule contains a name taken from any fixture.
 
@@ -20,6 +24,8 @@ Requirement IDs follow the convention of the EARS parser: `precision-fix/R<N>.<M
 - **Python constant**: a top-level Python assignment whose left side is a single plain identifier, with or without an annotation, such as `NAME = 3` or `NAME: int = 3`.
 - **Zombie candidate**: an exported symbol of kind function, class, const, enum, interface or type in a non-test file, as decided by `isZombieCandidate`. Methods are never candidates.
 - **Explicit link**: a code link whose method is `commit` or `tag`.
+- **Explicit owner**: a requirement that has an explicit link to a symbol. A symbol may have several explicit owners.
+- **Owner snapshot**: the map from symbol key to the set of its explicit owners, taken once after the commit and tag steps and before token overlap, shared by token overlap and `test-call`.
 - **Call set**: the optional field `calls` of a test case, the identifier names its body uses.
 - **References**: the optional field `references` of a symbol, the identifier names its body uses, definition names excluded.
 - **Root symbol**: a symbol of a non-test file that is linked to at least one requirement by any method, `test-call` included.
@@ -121,12 +127,12 @@ Requirement IDs follow the convention of the EARS parser: `precision-fix/R<N>.<M
 
 1. The planted fixture SHALL gain one new spec `dispatch` with new files only: its `requirements.md`, `src/dispatch.py`, `tests/test_dispatch.py`, and one appended entry of `commits.json` that lists them. No existing file of the planted fixture SHALL change.
 2. The new planted files SHALL hold these scenarios and nothing else: a tagged Python constant with a tagged test, giving a proven requirement; a requirement linked to a test by title whose code is found by `test-call`, giving a proven requirement; and an exported helper and a helper of that helper, both called by linked code, that are no zombies.
-3. The new planted scenarios SHALL produce no ghost, no unproven and no zombie finding, and every existing entry of the planted `expected.json` SHALL stay, because existing tests assert exactly 14 planted findings and exactly 4 planted ghosts.
+3. The new planted scenarios SHALL produce no ghost, no unproven and no zombie finding, and every existing entry of the planted `expected.json` SHALL stay, because existing tests assert exactly 14 planted findings and exactly 4 planted ghosts. The one exception is the rule 5 scenario of requirement 9, which MAY add one ghost finding as an add-only entry of `expected.json` if the planted truth needs it.
 4. The accuracy test SHALL keep asserting planted overall precision and overall recall of at least 0.8 and SHALL keep printing them in the same format.
 5. The repository SHALL contain a held-out accuracy test that prints the held-out precision and recall and asserts that both are at least 0.80, and it SHALL be the only new assertion on the held-out fixture.
-6. The repository SHALL contain one unit test per rule on a small synthetic input: Python constants, numbers, call and reference data, `test-call` including the explicit-link exception, and helper adoption including transitivity, a cycle and a reference from a test file.
-7. The repository SHALL contain fast-check properties: with no `calls`, no `references` and no Python constants `link` equals the result without the new data; a `test-call` or an adoption never removes a link that exists without them; two runs give deep-equal results.
-8. IF the held-out floor is not reached after the four tasks, THEN the implementer SHALL report the printed numbers and the remaining false findings, and SHALL NOT change THRESHOLD, any `expected.json`, the floor or the assertions of an existing test to make it pass.
+6. The repository SHALL contain one unit test per rule on a small synthetic input: Python constants, numbers, call and reference data, `test-call` including the explicit-link exception, helper adoption including transitivity, a cycle and a reference from a test file, and overlap owners.
+7. The repository SHALL contain fast-check properties: with no `calls`, no `references` and no Python constants `link` equals the result without the new data; a `test-call` or an adoption never removes a link that exists without them; two runs give deep-equal results; removing all explicit links gives the result of before rule 5.
+8. IF the held-out floor is not reached after all tasks, THEN the implementer SHALL report the printed numbers and the remaining false findings, and SHALL NOT change THRESHOLD, any `expected.json` (other than the add-only entry allowed in criterion 3), the floor or the assertions of an existing test to make it pass.
 9. The maintainers SHALL NOT edit `tests/fixtures/heldout`, `tests/fixtures/blind3` or `tests/fixtures/blind4`, SHALL NOT open the blind fixtures, and SHALL NOT edit the assertions of an existing test; IF an existing test fails because of the new behavior, THEN design.md and the final summary SHALL name that test.
 
 ### Requirement 8: Acceptance
@@ -138,3 +144,17 @@ Requirement IDs follow the convention of the EARS parser: `precision-fix/R<N>.<M
 1. WHEN the work is done, THEN `npx vitest --run` and `npx tsc --noEmit` SHALL pass, apart from any existing test named in design.md as a deliberate consequence.
 2. WHEN `npm run autopsy` runs on this repository after the change, THEN it SHALL finish without error.
 3. WHEN the last task is done, THEN the final summary SHALL state the planted and the held-out precision and recall as printed, before (held-out precision 0.50, recall 0.80) and after.
+
+### Requirement 9: Overlap respects explicit owners
+
+**User Story:** As a maintainer, I want a symbol that a tag or a commit gave to one requirement not to be linked by name overlap to other requirements, so that a true ghost is not turned into a "proven" requirement.
+
+#### Acceptance Criteria
+
+1. IF a symbol has an explicit link (method `tag` or `commit`) to a requirement A, THEN step 2 of `link` (token overlap) SHALL NOT link that symbol to any requirement B other than A.
+2. WHEN a symbol has a `tag` link to requirement A, THEN the linker SHALL still link that symbol to A with that tag link, and the overlap step SHALL NOT remove or change it.
+3. WHEN two or more requirements both have an explicit link to the same symbol, THEN each of them SHALL keep its explicit link, and the symbol SHALL count as owned by all of them, so that overlap links it to none of the others.
+4. WHEN a symbol has a `commit` link to a requirement, THEN the linker SHALL treat that requirement as an explicit owner of the symbol exactly as it treats a `tag` link.
+5. WHEN a symbol has no explicit owner, THEN overlap SHALL link it exactly as before this rule, and THRESHOLD, NEAR_MISS, `overlapScore`, `overlaps` and the near-miss logic SHALL stay unchanged.
+6. The linker SHALL take the explicit owners from one snapshot, built by one helper that `test-call` (requirement 4) also uses, and `link` SHALL stay pure and deterministic, and its result SHALL NOT depend on the order of the requirements.
+7. WHEN the rule is done, THEN on the planted fixture overall precision and overall recall SHALL stay at least 0.8, and every existing test SHALL pass without editing an assertion; IF one needs a change, THEN design.md "Existing tests that may fail" SHALL name it.
