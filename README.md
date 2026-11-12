@@ -10,7 +10,7 @@ The Morgue is a static page over `report.json`. It shows:
 - filter chips for ghosts, zombies, unproven promises and low confidence (a chip with no findings is disabled);
 - a two-way link between map and tags: hover or focus a marker or a tag to see its partner outlined; Enter on a marker jumps to its tag, "Show on map" on a tag jumps to its marker, Tab reaches every control, Escape clears the link.
 
-Build it with `npm run morgue`. It writes `src/ui/public/report.json` and builds the static site with Vite. The page makes no network request except `./report.json`.
+A demo `report.json` (the self-autopsy of this repository) is committed at `src/ui/public/report.json`, so `npm run ui:build` on any static host gives a working Morgue; `npm run morgue` refreshes it. Host settings: build command `npm ci && npm run ui:build`, publish directory `dist/ui`. The page makes no network request except `./report.json`.
 
 Two design decisions (see `.kiro/specs/morgue-pass-2/design.md`):
 - The steel panel comes from an SVG hairline pattern and token-coloured shadows, not CSS gradients (the style rules test forbids gradients).
