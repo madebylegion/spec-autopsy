@@ -19,12 +19,19 @@ export function symbolKey(file: string, startLine: number, name: string): string
   return `${file}\u0000${startLine}\u0000${name}`;
 }
 
-/** ghost: no code links; unproven: code but no test; proven: code and test. */
+/**
+ * ghost: no code links; unproven: code but no test; proven: code and test.
+ * Exception (constraint-reqs/R1.1): with no code link, a test link whose method
+ * is `tag` (the author's claim) makes the requirement proven; other test links
+ * (overlap, commit) leave it a ghost.
+ */
 export function classifyRequirement(
   codeLinks: readonly CodeLink[],
   testLinks: readonly TestLink[],
 ): RequirementStatus {
-  if (codeLinks.length === 0) return "ghost";
+  if (codeLinks.length === 0) {
+    return testLinks.some((t) => t.method === "tag") ? "proven" : "ghost";
+  }
   if (testLinks.length === 0) return "unproven";
   return "proven";
 }

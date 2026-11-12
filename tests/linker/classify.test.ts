@@ -36,7 +36,7 @@ function file(path: string, symbols: CodeSymbol[], isTest = false): FileIndex {
 describe("classifyRequirement", () => {
   it("is ghost without code links, even with test links", () => {
     expect(classifyRequirement([], [])).toBe("ghost");
-    expect(classifyRequirement([], [testLink])).toBe("ghost");
+    expect(classifyRequirement([], [{ ...testLink, method: "overlap" }])).toBe("ghost");
   });
 
   it("is unproven with code and no test", () => {

@@ -65,3 +65,21 @@ export function zombieEvidence(zombie: Zombie): string[] {
   }
   return out;
 }
+
+// constraint-reqs/R2.1
+/** Words why a proven requirement is proven, including one with no code link. Total, never throws. */
+export function provenEvidence(entry: RequirementEntry): string[] {
+  const tagged = entry.testLinks.find((t) => t.method === "tag");
+  const first = entry.testLinks[0];
+  if (entry.codeLinks.length > 0) {
+    return [first === undefined ? "proven" : `proven by test ${first.file}:${first.line}`];
+  }
+  if (tagged !== undefined) {
+    return [`no code link; proven by tagged test ${tagged.file}:${tagged.line}`];
+  }
+  if (entry.testOnlyCommit !== undefined) {
+    return [`no code link; proven by test-only task commit ${sha7(entry.testOnlyCommit)}`];
+  }
+  if (first !== undefined) return [`no code link; proven by test ${first.file}:${first.line}`];
+  return ["no code link"];
+}

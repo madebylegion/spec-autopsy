@@ -109,7 +109,10 @@ describe("link properties", () => {
             expect(entry.testLinks).toHaveLength(0);
           } else {
             proven++;
-            expect(entry.codeLinks.length).toBeGreaterThan(0);
+            // constraint-reqs/R3.4: proven needs a code link OR a tag test link
+            if (!entry.testLinks.some((t) => t.method === "tag")) {
+              expect(entry.codeLinks.length).toBeGreaterThan(0);
+            }
             expect(entry.testLinks.length).toBeGreaterThan(0);
           }
         }
