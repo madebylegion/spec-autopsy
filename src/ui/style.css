@@ -475,7 +475,7 @@ body {
   width: 100%;
   min-height: var(--tap);
   height: auto;
-  padding: 0 4px;
+  padding: 2px 4px;
   transform: none;
   color: var(--bone);
   text-align: left;
@@ -492,12 +492,24 @@ body {
   outline-offset: -3px;
 }
 
+/*
+  A zombie label is never cut: it wraps at the <wbr> that body-map.ts puts after "_", "." and "#"
+  and between a lower-case and an upper-case letter. A name with no break point stays on one line.
+*/
 .marker-label {
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
   font-family: var(--font-body);
   font-size: 0.75rem;
   line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+/* The phone zombie row keeps its one-line label (the text is already shortened there). */
+.phone-zombie-row .marker-label {
+  overflow: hidden;
   white-space: nowrap;
 }
 

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { idBreakParts } from "../../src/ui/id-breaks.js";
+import { idBreakParts, symbolBreakParts } from "../../src/ui/id-breaks.js";
 
 const css = readFileSync(new URL("../../src/ui/style.css", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
 
@@ -69,6 +69,14 @@ describe("label wrapping rules (style.css)", () => {
   it("sizes .tag-id with clamp()", () => {
     expect(bodiesFor(".tag-id").join(";")).toMatch(/font-size\s*:\s*clamp\(/);
   });
+
+  it("lets .marker-label wrap and never clips it", () => {
+    const text = bodiesFor(".marker-label").join(";");
+    expect(text).not.toMatch(/white-space\s*:\s*nowrap/);
+    expect(text).not.toMatch(/overflow\s*:\s*hidden/);
+    expect(text).toMatch(/white-space\s*:\s*normal/);
+    expect(text).toMatch(/overflow\s*:\s*visible/);
+  });
 });
 
 describe("idBreakParts", () => {
@@ -105,6 +113,52 @@ describe("idBreakParts", () => {
           // No / or - inside a part except at its end.
           expect(/[/-]/.test(part.slice(0, -1))).toBe(false);
         }
+      }),
+    );
+  });
+});
+
+describe("symbolBreakParts", () => {
+  it("breaks camelCase between a lower-case and an upper-case letter", () => {
+    expect(symbolBreakParts("SummaryRequirement")).toEqual(["Summary", "Requirement"]);
+    expect(symbolBreakParts("idBreakParts")).toEqual(["id", "Break", "Parts"]);
+  });
+
+  it("breaks after _", () => {
+    expect(symbolBreakParts("export_queue_csv")).toEqual(["export_", "queue_", "csv"]);
+  });
+
+  it("breaks after . and #", () => {
+    expect(symbolBreakParts("src/a.ts#fooBar")).toEqual(["src/a.", "ts#", "foo", "Bar"]);
+  });
+
+  it("keeps an acronym run together before a capitalised word", () => {
+    expect(symbolBreakParts("HTTPServer")).toEqual(["HTTP", "Server"]);
+    expect(symbolBreakParts("HTTP")).toEqual(["HTTP"]);
+  });
+
+  it("does not break a name without a break point", () => {
+    expect(symbolBreakParts("formatisbnvalue")).toEqual(["formatisbnvalue"]);
+  });
+
+  it("gives no parts for an empty string", () => {
+    expect(symbolBreakParts("")).toEqual([]);
+  });
+
+  it("joins back to the input for any string", () => {
+    fc.assert(
+      fc.property(fc.string(), (name) => {
+        const parts = symbolBreakParts(name);
+        expect(parts.join("")).toBe(name);
+        for (const part of parts) expect(part.length).toBeGreaterThan(0);
+      }),
+    );
+  });
+
+  it("joins back to the input for identifier-like strings", () => {
+    fc.assert(
+      fc.property(fc.stringMatching(/^[A-Za-z0-9_.#/-]{0,40}$/), (name) => {
+        expect(symbolBreakParts(name).join("")).toBe(name);
       }),
     );
   });

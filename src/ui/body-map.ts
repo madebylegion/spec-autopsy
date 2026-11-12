@@ -1,5 +1,5 @@
-// Thin DOM code. The silhouette is SVG; every marker is a real HTML button over it.
 import type { Report } from "../report/types.js";
+import { symbolBreakParts } from "./id-breaks.js";
 import {
   BODY_WIDTH,
   MAP_HEIGHT,
@@ -127,7 +127,23 @@ function markerButton(marker: MapMarker, options: BodyMapOptions): HTMLButtonEle
   return button;
 }
 
-/** One zombie in the wide zombie group: a dot and a short label; the full name is the title and the accessible name. */
+/**
+ * The label of a zombie in the wide group: the full id as text pieces with a <wbr> between them
+ * (see symbolBreakParts). A <wbr> has no text, so textContent is the id exactly.
+ */
+function zombieLabel(id: string): HTMLSpanElement {
+  const label = document.createElement("span");
+  label.className = "marker-label";
+  label.setAttribute("aria-hidden", "true");
+  label.title = id;
+  symbolBreakParts(id).forEach((part, index) => {
+    if (index > 0) label.append(document.createElement("wbr"));
+    label.append(document.createTextNode(part));
+  });
+  return label;
+}
+
+/** One zombie in the wide zombie group: a dot and a label that wraps; the full name is the title and the accessible name. */
 function zombieButton(marker: MapMarker, options: BodyMapOptions): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
@@ -142,11 +158,7 @@ function zombieButton(marker: MapMarker, options: BodyMapOptions): HTMLButtonEle
   button.dataset["markerKey"] = marker.key;
   const dot = document.createElement("span");
   dot.className = "marker-dot";
-  const label = document.createElement("span");
-  label.className = "marker-label";
-  label.setAttribute("aria-hidden", "true");
-  label.textContent = middleTruncate(marker.id, ZOMBIE_LABEL_MAX);
-  button.append(dot, label);
+  button.append(dot, zombieLabel(marker.id));
   button.addEventListener("click", () => options.onSelect(marker.key));
   return button;
 }
