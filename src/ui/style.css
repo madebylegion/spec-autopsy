@@ -303,6 +303,7 @@ body {
 /*
   Filter chips: all four share one rule set (same height, border and type).
   Off = outline; on = filled with the type colour and a check mark; no findings = dimmed and disabled.
+  A chip label may wrap between words (the chip grows in height) but never inside a word.
 */
 .filters {
   display: flex;
@@ -316,18 +317,33 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  min-width: 0;
   min-height: var(--tap);
-  padding: 0 16px;
+  padding: 4px 16px;
   border: 2px solid var(--accent);
   border-radius: 0;
   background: transparent;
   color: var(--bone);
   font-family: var(--font-display);
   font-size: 1rem;
+  line-height: 1.2;
   text-align: center;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   cursor: pointer;
+}
+
+.chip,
+.chip-label,
+.chip-count,
+.chip-mark {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: manual;
+}
+
+.chip-label {
+  min-width: 0;
 }
 
 .chip[aria-pressed="true"] {
@@ -343,10 +359,12 @@ body {
 
 .chip-mark {
   display: inline-block;
+  flex: none;
   min-width: 1ch;
 }
 
 .chip-count {
+  flex: none;
   font-weight: 700;
 }
 
@@ -852,6 +870,7 @@ body {
   clip-path: polygon(0 -26px, 70px -26px, 70px 0, calc(100% - 26px) 0, 100% 26px, 100% 100%, 0 100%);
 }
 
+/* A size container: the id font follows the width of the sheet (see .tag-id). */
 .tag-sheet {
   flex: 1;
   min-width: 0;
@@ -860,6 +879,7 @@ body {
   border-top: 8px solid var(--accent);
   background: var(--tag-paper);
   clip-path: polygon(0 -26px, 68px -26px, 68px 0, calc(100% - 25px) 0, 100% 25px, 100% 100%, 0 100%);
+  container-type: inline-size;
 }
 
 .tag--selected {
@@ -923,10 +943,16 @@ body {
   stroke-width: 2;
 }
 
+/*
+  The id breaks only at the <wbr> after "/" and "-" (render.ts), never inside an identifier.
+  A bare name such as SummaryRequirement must fit on one line beside the stamp, so the size
+  follows the sheet width: 3.5cqi is about 11.3px on a 390 px phone (24 characters fit),
+  and it stops at 1.125rem on a wide tag.
+*/
 .tag-id {
   min-width: 0;
   font-family: var(--font-display);
-  font-size: 1.125rem;
+  font-size: clamp(0.6875rem, 3.5cqi, 1.125rem);
   font-weight: 700;
 }
 
@@ -1063,6 +1089,19 @@ body {
 
 .path-tail {
   white-space: nowrap;
+}
+
+/*
+  Tag text opts out of body's overflow-wrap: anywhere (kept for long free text such as paths
+  in evidence and requirement sentences): a label is never cut in the middle of a word.
+*/
+.tag-id,
+.tag-type,
+.meta-label,
+.marker-label,
+.phone-marker-label {
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 /* The only motion: a short swing of a tag when it opens. Transform only. */

@@ -1,6 +1,7 @@
 // Thin DOM code. All text goes through textContent, never innerHTML.
 import type { Finding, Report } from "../report/types.js";
 import { bodyMap, mapLegend, phoneMap } from "./body-map.js";
+import { idBreakParts } from "./id-breaks.js";
 import {
   applyFilters,
   buildMarkers,
@@ -124,6 +125,19 @@ function pathNode(file: string, line: number): HTMLElement {
   return path;
 }
 
+/**
+ * The tag id with a <wbr> after each "/" and each "-", so it breaks only there.
+ * A <wbr> has no text, so textContent is the id exactly.
+ */
+function idNode(id: string): HTMLElement {
+  const node = el("span", "tag-id");
+  idBreakParts(id).forEach((part, index) => {
+    if (index > 0) node.append(document.createElement("wbr"));
+    node.append(part);
+  });
+  return node;
+}
+
 function metaRow(label: string, value: Node | string): HTMLElement {
   const row = el("div", "meta-row");
   const term = el("dt", "meta-label", label);
@@ -165,7 +179,7 @@ function toeTag(finding: Finding, key: string, selected: boolean, onSelect: (key
   const head = el("div", "tag-head");
   const eyelet = el("div", "tag-eyelet");
   eyelet.append(el("span", "tag-hole"), stringLoop());
-  head.append(eyelet, el("span", "tag-id", text.id), el("span", "tag-type", tagLabel(finding.type)));
+  head.append(eyelet, idNode(text.id), el("span", "tag-type", tagLabel(finding.type)));
   const title = el("p", "tag-title", text.clamped);
   const open = el("button", "link-button", "Open details");
   open.type = "button";
