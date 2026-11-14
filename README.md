@@ -2,6 +2,34 @@
 An autopsy table for AI-built code: it joins EARS specs, a code index, git history and property tests, then names the ghosts, zombies and unproven promises.
 Early build, made with Kiro (see `.kiro/`). Licence: MIT.
 
+- Live demo: {LIVE_URL}
+- Demo video: {VIDEO_URL}
+- Category: Kiroween 2026, Frankenstein.
+
+## Run it
+Needs Node 22 and git.
+```
+npm ci
+npm test               # test suite
+npm run typecheck
+./demo.sh              # SpecAutopsy runs on its own .kiro folder, no network, no LLM
+npm run morgue         # refresh report.json and build the Morgue into dist/ui
+npm run ui:preview     # open the Morgue locally
+```
+
+## How Kiro was used
+All application code in this repository was written by Kiro, driven by specs. A human ran the tests and decided what to fix.
+- Steering: `.kiro/steering/product.md`, `tech.md`, `structure.md`.
+- Specs (requirements, design, tasks; spec-driven, one per feature): `.kiro/specs/` holds 12 specs, e.g. `ears-parser`, `indexer`, `linker`, `report-and-morgue`, `mcp-report-server`, `morgue-pass-2`, `constraint-reqs`.
+- Hook: `.kiro/hooks/autopsy-on-spec-save.json` re-runs the autopsy when a requirements file is saved.
+- MCP: `.kiro/settings/mcp.json` registers the `spec-autopsy` server (`src/mcp/server.ts`).
+- Custom agent: `.kiro/agents/autopsy.json`.
+- Property-based tests: fast-check, under `tests/`.
+- Vibe coding: small fixes after a failing test; the spec stays the source of truth.
+
+## Pre-existing code
+None. Every commit dates from 9 Nov 2026 or later (inside the submission period). Third-party libraries only: `@modelcontextprotocol/sdk`, `web-tree-sitter`, `tree-sitter-wasms`, `zod`; dev: `vite`, `vitest`, `fast-check`, `tsx`, `typescript`.
+
 ## Morgue
 The Morgue is a static page over `report.json`. It shows:
 - the full body, with the regions no spec maps to drawn dimmer instead of left out;
