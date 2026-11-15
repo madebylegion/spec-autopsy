@@ -2,7 +2,7 @@
 An autopsy table for AI-built code: it joins EARS specs, a code index, git history and property tests, then names the ghosts, zombies and unproven promises.
 Early build, made with Kiro (see `.kiro/`). Licence: MIT.
 
-- Live demo: {LIVE_URL}
+- Live demo: https://madebylegion.github.io/spec-autopsy/
 - Demo video: {VIDEO_URL}
 - Category: Kiroween 2026, Frankenstein.
 
