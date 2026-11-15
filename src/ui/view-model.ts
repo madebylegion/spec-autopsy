@@ -7,6 +7,7 @@ import type {
   ReportRequirement,
   ValidateResult,
 } from "../report/types.js";
+import { provenEvidence } from "../report/evidence.js";
 
 export type Region =
   | "head"
@@ -494,6 +495,8 @@ export interface Detail {
   evidence: string[];
   codeLinks: string[];
   testLinks: string[];
+  /** First line of provenEvidence for a proven requirement with no code link; null otherwise. */
+  provenNote: string | null;
   lastCommit: string | null;
 }
 
@@ -528,6 +531,8 @@ export function detailFor(report: Report, key: string): Detail | null {
         testLinks: req.testLinks.map(
           (l) => `${l.file}:${l.line} ${l.title} (${viaText(l.method, l.score, l.commit)})`,
         ),
+        provenNote:
+          req.status === "proven" && req.codeLinks.length === 0 ? (provenEvidence(req)[0] ?? null) : null,
         lastCommit:
           req.lastCommit === null
             ? null
@@ -552,6 +557,7 @@ export function detailFor(report: Report, key: string): Detail | null {
     evidence: [...finding.evidence],
     codeLinks: [],
     testLinks: [],
+    provenNote: null,
     lastCommit: null,
   };
 }

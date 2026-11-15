@@ -303,7 +303,7 @@ function detailPanel(detail: Detail, onClose: () => void): HTMLElement {
   if (detail.evidence.length > 0) panel.append(detailSection("Evidence", list(detail.evidence, "")));
   if (detail.kind === "requirement") {
     panel.append(
-      detailSection("Code links", list(detail.codeLinks, "No code linked.")),
+      detailSection("Code links", list(detail.codeLinks, detail.provenNote ?? "No code linked.")),
       detailSection("Test links", list(detail.testLinks, "No test linked.")),
     );
   }
