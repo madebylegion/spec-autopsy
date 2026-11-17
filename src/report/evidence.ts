@@ -10,8 +10,16 @@ function score2(score: number): string {
   return score.toFixed(2);
 }
 
+// ghost-test-evidence/R1.2
 export function ghostEvidence(entry: RequirementEntry): string[] {
-  const out = [`no symbol or test links to ${entry.id} by tag, commit or word overlap`];
+  const testCount = entry.testLinks.length;
+  const firstLine =
+    testCount === 0
+      ? `no symbol or test links to ${entry.id} by tag, commit or word overlap`
+      : testCount === 1
+        ? `no symbol links to ${entry.id}; 1 test link only (tests do not prove code)`
+        : `no symbol links to ${entry.id}; ${testCount} test links only (tests do not prove code)`;
+  const out = [firstLine];
   const near = entry.nearMiss;
   if (near !== undefined && near.symbol !== null) {
     out.push(`closest name: ${near.file}#${near.symbol} shares words (score ${score2(near.score)})`);
@@ -20,8 +28,9 @@ export function ghostEvidence(entry: RequirementEntry): string[] {
   if (doubt !== undefined) {
     const slash = entry.id.indexOf("/");
     const spec = slash < 0 ? entry.id : entry.id.slice(0, slash);
+    const ending = testCount === 0 ? `yet nothing links to ${entry.id}` : `yet no symbol links to ${entry.id}`;
     out.push(
-      `task ${doubt.task} of ${spec} is checked [x] and its commit ${sha7(doubt.commit)} is resolved, yet nothing links to ${entry.id}`,
+      `task ${doubt.task} of ${spec} is checked [x] and its commit ${sha7(doubt.commit)} is resolved, ${ending}`,
     );
   }
   return out;

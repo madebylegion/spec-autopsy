@@ -6,8 +6,8 @@ This plan corrects the `ghostEvidence` function in `src/report/evidence.ts` to p
 
 ## Tasks
 
-- [ ] 1. ghostEvidence counts test links, with unit tests
-  - [ ] 1.1 Modify `ghostEvidence` in `src/report/evidence.ts`
+- [x] 1. ghostEvidence counts test links, with unit tests
+  - [x] 1.1 Modify `ghostEvidence` in `src/report/evidence.ts`
     - Count `entry.testLinks.length` at the start of the function
     - When `testLinks.length === 0`: keep first line as "no symbol or test links to <id> by tag, commit or word overlap" and contradiction ending as "yet nothing links to <id>" (unchanged)
     - When `testLinks.length === 1`: change first line to "no symbol links to <id>; 1 test link only (tests do not prove code)" and contradiction ending to "yet no symbol links to <id>"
@@ -16,7 +16,7 @@ This plan corrects the `ghostEvidence` function in `src/report/evidence.ts` to p
     - Add tag comment `// ghost-test-evidence/R1.2` directly above the `ghostEvidence` function
     - _Requirements: ghost-test-evidence/R1.1, ghost-test-evidence/R1.2, ghost-test-evidence/R1.3, ghost-test-evidence/R1.4, ghost-test-evidence/R1.5, ghost-test-evidence/R1.6, ghost-test-evidence/R1.7, ghost-test-evidence/R1.8_
   
-  - [ ] 1.2 Create `tests/report/ghost-test-evidence.test.ts`
+  - [x] 1.2 Create `tests/report/ghost-test-evidence.test.ts`
     - Test case 1: ghost with zero test links, with contradiction
       - Tag: `// ghost-test-evidence/R1.1` above `it(`
       - Assert first line is "no symbol or test links to <id> by tag, commit or word overlap"
