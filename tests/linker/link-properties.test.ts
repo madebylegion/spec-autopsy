@@ -106,7 +106,8 @@ describe("link properties", () => {
           } else if (entry.status === "unproven") {
             unproven++;
             expect(entry.codeLinks.length).toBeGreaterThan(0);
-            expect(entry.testLinks).toHaveLength(0);
+            // overlap-proof: unproven may keep overlap-only test links
+            expect(entry.testLinks.every((t) => t.method === "overlap")).toBe(true);
           } else {
             proven++;
             // constraint-reqs/R3.4: proven needs a code link OR a tag test link

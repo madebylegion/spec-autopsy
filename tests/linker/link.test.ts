@@ -186,7 +186,8 @@ describe("link: overlap", () => {
     const entry = link(requirements, idx).requirements[0];
     expect(entry?.codeLinks.map((l) => l.method)).toEqual(["tag"]);
     expect(entry?.testLinks.map((l) => l.method)).toEqual(["overlap"]);
-    expect(entry?.status).toBe("proven");
+    // overlap-proof: an overlap-only test link no longer proves (was "proven")
+    expect(entry?.status).toBe("unproven");
   });
 
   it("links method symbols by overlap but never reports a method as zombie", () => {

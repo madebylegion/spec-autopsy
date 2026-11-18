@@ -124,6 +124,7 @@ describe("classifyRequirement: constraint requirements", () => {
   });
 });
 
+// constraint-reqs/R2.1
 describe("provenEvidence", () => {
   // constraint-reqs/R2.2
   it("words a tagged test with no code link", () => {
@@ -258,7 +259,8 @@ describe("classifyRequirement: properties", () => {
   it("equals the old rule whenever a code link exists", () => {
     fc.assert(
       fc.property(codeLinksArb, testLinksArb, (c, t) => {
-        fc.pre(c.length > 0);
+        // overlap-proof narrows this: overlap-only test links no longer prove
+        fc.pre(c.length > 0 && (t.length === 0 || t.some((x) => x.method !== "overlap")));
         expect(classifyRequirement(c, t)).toBe(oldRule(c, t));
       }),
     );

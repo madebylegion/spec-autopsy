@@ -30,11 +30,13 @@ function req(over: Partial<ReportRequirement>): ReportRequirement {
 }
 
 describe("detailFor provenNote", () => {
+  // proven-evidence-ui/R1.1
   it("proven with no code link: the first provenEvidence line", () => {
     const d = detailFor(reportWith(req({})), "spec/R1.1");
     expect(d?.provenNote).toBe("no code link; proven by tagged test tests/a.test.ts:42");
   });
 
+  // proven-evidence-ui/R1.2
   it("proven with a code link: no note, links unchanged", () => {
     const code = { symbol: "f", file: "src/f.ts", startLine: 3, method: "tag" as const, score: 1 };
     const d = detailFor(reportWith(req({ codeLinks: [code] })), "spec/R1.1");
@@ -42,6 +44,7 @@ describe("detailFor provenNote", () => {
     expect(d?.codeLinks).toHaveLength(1);
   });
 
+  // proven-evidence-ui/R1.3
   it("unproven with no code link: no note (panel keeps 'No code linked.')", () => {
     const d = detailFor(reportWith(req({ status: "unproven", testLinks: [] })), "spec/R1.1");
     expect(d?.provenNote).toBeNull();
