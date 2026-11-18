@@ -82,7 +82,7 @@ const systemNode = ["/usr/bin/node", "/bin/node", "/usr/local/bin/node", "/opt/h
 );
 
 describe("src/mcp/launch.sh", () => {
-  it("finds node under HOME and runs tsx on the server with nothing on stdout", async () => {
+  it.skipIf(systemNode)("finds node under HOME and runs tsx on the server with nothing on stdout", async () => {
     const { project, home, bin, root } = setup();
     const record = join(root, "argv.txt");
     const nodeDir = join(home, MISE_NODE);
