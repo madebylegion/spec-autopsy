@@ -188,6 +188,24 @@ function contradictionOf(
   return best;
 }
 
+// overlap-proof/R1.4
+/** True when an overlap test link calls one of the code symbols. */
+function overlapTestCalls(
+  codeLinks: readonly CodeLink[],
+  testLinks: readonly TestLink[],
+  testCasesByKey: ReadonlyMap<string, TestCase>,
+): boolean {
+  for (const testLink of testLinks) {
+    if (testLink.method !== "overlap") continue;
+    const testCase = testCasesByKey.get(testKey(testLink.file, testLink.line, testLink.title));
+    const calls = testCase?.calls ?? [];
+    for (const codeLink of codeLinks) {
+      if (calls.includes(codeLink.symbol)) return true;
+    }
+  }
+  return false;
+}
+
 /** A zombie candidate of a non-test file, found by name for the `test-call` and adoption steps. */
 interface NamedCandidate {
   key: string;
@@ -508,7 +526,7 @@ export function link(
     );
     const entry: RequirementEntry = {
       id: work.req.id,
-      status: classifyRequirement(codeLinks, testLinks),
+      status: classifyRequirement(codeLinks, testLinks, overlapTestCalls(codeLinks, testLinks, testCasesByKey)),
       file: work.req.file,
       line: work.req.line,
       codeLinks,

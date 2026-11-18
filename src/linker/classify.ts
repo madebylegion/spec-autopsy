@@ -24,16 +24,22 @@ export function symbolKey(file: string, startLine: number, name: string): string
  * Exception (constraint-reqs/R1.1): with no code link, a test link whose method
  * is `tag` (the author's claim) makes the requirement proven; other test links
  * (overlap, commit) leave it a ghost.
+ * With a code link, overlap test links alone do not prove (overlap-proof).
  */
+// overlap-proof/R1.1, overlap-proof/R1.2, overlap-proof/R1.3
 export function classifyRequirement(
   codeLinks: readonly CodeLink[],
   testLinks: readonly TestLink[],
+  overlapTestCallsCode = false,
 ): RequirementStatus {
   if (codeLinks.length === 0) {
     return testLinks.some((t) => t.method === "tag") ? "proven" : "ghost";
   }
   if (testLinks.length === 0) return "unproven";
-  return "proven";
+  if (testLinks.some((t) => t.method !== "overlap")) return "proven";
+  if (codeLinks.some((c) => c.method === "test-call")) return "proven";
+  if (overlapTestCallsCode) return "proven";
+  return "unproven";
 }
 
 function zombieKind(kind: SymbolKind): ZombieKind | undefined {
