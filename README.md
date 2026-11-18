@@ -20,8 +20,9 @@ npm run ui:preview     # open the Morgue locally
 ## How Kiro was used
 All application code in this repository was written by Kiro, driven by specs, except the one change below. Tests were run, and fixes chosen, outside Kiro.
 - The "proven evidence in Code links" feature was specced with Kiro CLI during the hackathon (requirements, design and tasks: `.kiro/specs/proven-evidence-ui/`). Its code (task 1) and its tests (tasks 2.1 to 2.3) were written outside Kiro, because the Kiro CLI turn that was meant to build it ran past the free credit budget without writing code.
+- The `overlap-proof` fix (an overlap-only test link no longer proves a requirement) was specced and coded by Kiro CLI, with its new tests. Its task 2 was done outside Kiro: three existing test assertions updated to the new rule, requirement tag comments added to four existing tests (`constraint-reqs/R2.1`, `proven-evidence-ui/R1.1` to `R1.3`), and the launcher test "finds node under HOME" now skips on machines with a system-wide node, like its sibling test.
 - Steering: `.kiro/steering/product.md`, `tech.md`, `structure.md`.
-- Specs (requirements, design, tasks; spec-driven, one per feature): `.kiro/specs/` holds 14 specs, e.g. `ears-parser`, `indexer`, `linker`, `report-and-morgue`, `mcp-report-server`, `morgue-pass-2`, `constraint-reqs`.
+- Specs (requirements, design, tasks; spec-driven, one per feature): `.kiro/specs/` holds 15 specs, e.g. `ears-parser`, `indexer`, `linker`, `report-and-morgue`, `mcp-report-server`, `morgue-pass-2`, `constraint-reqs`.
 - Hook: `.kiro/hooks/autopsy-on-spec-save.json` re-runs the autopsy when a requirements file is saved.
 - MCP: `.kiro/settings/mcp.json` registers the `spec-autopsy` server (`src/mcp/server.ts`).
 - Custom agent: `.kiro/agents/autopsy.json`.
